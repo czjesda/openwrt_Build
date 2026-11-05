@@ -6,9 +6,6 @@ sed -i 's/192.168.1.1/192.168.2.1/g' openwrt/package/base-files/files/bin/config
 # 取消bootstrap为默认主题
 sed -i 's/luci-theme-bootstrap/luci-theme-argon/g' feeds/luci/collections/luci/Makefile
 
-# 添加常用软件包
-git clone https://github.com/kenzok8/openwrt-packages.git package/openwrt-packages
-
 # 删除默认密码
 sed -i "/CYXluq4wUazHjmCDBCqXF/d" package/lean/default-settings/files/zzz-default-settings
 
