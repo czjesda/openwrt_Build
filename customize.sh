@@ -1,13 +1,19 @@
 #!/bin/bash
 #===============================================
-# Modify default IP
-sed -i 's/192.168.1.1/192.168.1.251/g' openwrt/package/base-files/files/bin/config_generate
+# 修改默认ip
+sed -i 's/192.168.1.1/192.168.2.1/g' openwrt/package/base-files/files/bin/config_generate
 
-# Modify default theme
-#sed -i 's/luci-theme-bootstrap/luci-theme-argon/g' feeds/luci/collections/luci/Makefile
+# 取消bootstrap为默认主题
+sed -i 's/luci-theme-bootstrap/luci-theme-argon/g' feeds/luci/collections/luci/Makefile
+
+# 添加常用软件包
+git clone https://github.com/kenzok8/openwrt-packages.git package/openwrt-packages
+
+# 删除默认密码
+sed -i "/CYXluq4wUazHjmCDBCqXF/d" package/lean/default-settings/files/zzz-default-settings
 
 # Modify hostname
-#sed -i 's/OpenWrt/kenzo/g' openwrt/package/base-files/files/bin/config_generate
+sed -i 's/OpenWrt/Dragon/g' openwrt/package/base-files/files/bin/config_generate
 
 #2. Custom settings
 #sed -i 's?zstd$?zstd ucl upx\n$(curdir)/upx/compile := $(curdir)/ucl/compile?g' tools/Makefile
