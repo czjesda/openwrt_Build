@@ -1,20 +1,11 @@
 ﻿#### AutoBuild-OpenWrt
-[1]: https://github.com/kenzok8/openwrt_Build/pulls
-[2]: https://github.com/kenzok8/openwrt_Build/issues/new
-[3]: https://img.shields.io/github/v/release/hyird/Action-Openwrt
-[4]: https://github.com/kenzok8/openwrt_Build/releases
-[5]: https://github.com/kenzok8/openwrt_Build/actions/workflows/Lean.yml/badge.svg
-[6]: https://github.com/kenzok8/openwrt_Build/actions
+[1]: https://github.com/kenzok8/openwrt_Build/releases
 
 ### 默认插件包含:
-+ Mosdns
-+ openclash
 + SSR Plus
-+ homeproxy
-+ mihomo
-+ 动态DDNS
++ Passwall
++ Passwall2
 + UPNP 自动端口转发
-+ 默认多个主题
 + 默认管理 IP: 192.168.1.251, 用户名 root，密码 password
 
 * 修改默认ip
