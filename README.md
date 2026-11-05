@@ -1,56 +1,12 @@
 ﻿#### AutoBuild-OpenWrt
-[1]: https://img.shields.io/badge/license-GPLV2-brightgreen.svg
-[2]: /LICENSE
-[3]: https://img.shields.io/badge/PRs-welcome-brightgreen.svg
-[4]: https://github.com/kenzok8/openwrt_Build/pulls
-[5]: https://img.shields.io/badge/Issues-welcome-brightgreen.svg
-[6]: https://github.com/kenzok8/openwrt_Build/issues/new
-[7]: https://img.shields.io/github/v/release/hyird/Action-Openwrt
-[8]: https://github.com/kenzok8/openwrt_Build/releases
-[10]: https://img.shields.io/badge/Contact-telegram-blue
-[11]: https://t.me/joinchat/JjxmyRZZXJWb74I-sCrryA
-[12]: https://github.com/kenzok8/openwrt_Build/actions/workflows/Lean.yml/badge.svg
-[13]: https://github.com/kenzok8/openwrt_Build/actions
-
-[![license][1]][2]
-[![GitHub Stars](https://img.shields.io/github/stars/kenzok8/openwrt_Build.svg?style=flat-square&label=Stars)](https://github.com/kenzok8/openwrt_Build/stargazers)
-[![GitHub Forks](https://img.shields.io/github/forks/kenzok8/openwrt_Build.svg?style=flat-square&label=Forks)](https://github.com/kenzok8/openwrt_Build)
-[![PRs Welcome][3]][4]
-[![Issue Welcome][5]][6]
-[![AutoBuild][12]][13]
-
-<a href="https://t.me/joinchat/JjxmyRZZXJWb74I-sCrryA" target="_blank">Telegram</a>
-
-<img src="https://v1.jinrishici.com/all.svg?font-size=24&spacing=3">
-
-
-##### [openwrt固件与插件下载](https://down.dllkids.xyz/firmware/)
-
-##### [docker镜像下载](https://hub.docker.com/r/kenzok8/openwrt-6p/tags)
-
-#### 源码来源：
-[![esir](https://img.shields.io/badge/AutoBuild-esir-red.svg?style=flat&logo=appveyor)](https://github.com/esirplayground/AutoBuild-OpenWrt)
- [![Lienol](https://img.shields.io/badge/passwall-openwrt-blueviolet.svg?style=flat&logo=appveyor)](https://github.com/xiaorouji/openwrt-passwall) 
-[![immortalwrt](https://img.shields.io/badge/immortalwrt-openwrt-orange.svg?style=flat&logo=appveyor)](https://github.com/immortalwrt/immortalwrt) 
-[![Lean](https://img.shields.io/badge/package-Lean-blueviolet.svg?style=flat&logo=appveyor)](https://github.com/coolsnowwolf/lede) 
-[![P3TERX](https://img.shields.io/badge/Actions-P3TERX-success.svg?style=flat&logo=appveyor)](https://github.com/P3TERX/Actions-OpenWrt)
-
-##### 固件发布:
-
-[![GitHub release (latest by date)](https://img.shields.io/github/v/release/kenzok8/openwrt_Build?style=for-the-badge&label=固件下载)](https://github.com/kenzok8/openwrt_Build/releases/latest)
-
-
-##### 固件下载链接
-
-- [Lienol_25.12固件地址](https://down.dllkids.xyz/firmware/Lienol/)
-- [Lean固件地址](https://down.dllkids.xyz/firmware/Lean/)
-- [immortalwrt-25.12固件](https://down.dllkids.xyz/firmware/ctc_25.12/)
-- [immortalwrt-24.10固件](https://down.dllkids.xyz/firmware/ctc_24.10/)
-- [nanopi-r5s固件下载](https://down.dllkids.xyz/firmware/nanopi-r5s/)
-- [nanopi-r6s固件下载](https://down.dllkids.xyz/firmware/nanopi-r6s/)
+[1]: https://github.com/kenzok8/openwrt_Build/pulls
+[2]: https://github.com/kenzok8/openwrt_Build/issues/new
+[3]: https://img.shields.io/github/v/release/hyird/Action-Openwrt
+[4]: https://github.com/kenzok8/openwrt_Build/releases
+[5]: https://github.com/kenzok8/openwrt_Build/actions/workflows/Lean.yml/badge.svg
+[6]: https://github.com/kenzok8/openwrt_Build/actions
 
 ### 默认插件包含:
-
 + Mosdns
 + openclash
 + SSR Plus
