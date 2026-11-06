@@ -188,38 +188,6 @@ jobs:
         rm -rf sha256sums
         echo "FIRMWARE=$PWD" >> $GITHUB_ENV
         echo "status=success" >> $GITHUB_OUTPUT
-        
-    - name: 上传固件到 Cloudflare R2
-      env:
-        R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
-        R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
-        R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
-        R2_BUCKET: ${{ secrets.R2_BUCKET }}
-      if: steps.organize.outputs.status == 'success' && !cancelled()
-      run: |
-        curl -fsSL https://rclone.org/install.sh | sudo bash
-        mkdir -p ~/.config/rclone
-        R2_ID="${R2_ACCESS_KEY_ID}"
-        if [ -z "$R2_ID" ] || [ -z "$R2_SECRET_ACCESS_KEY" ] || [ -z "$R2_BUCKET" ] || [ -z "$R2_ENDPOINT" ]; then
-          echo "Missing Cloudflare R2 credentials"
-          exit 1
-        fi
-        cat > ~/.config/rclone/rclone.conf <<EOF
-        [r2]
-        type = s3
-        provider = Cloudflare
-        access_key_id = ${R2_ID}
-        secret_access_key = ${R2_SECRET_ACCESS_KEY}
-        endpoint = ${R2_ENDPOINT}
-        acl = private
-        no_check_bucket = true
-        EOF
-        rclone copy "${{ env.FIRMWARE }}" "r2:${R2_BUCKET}/firmware/${{matrix.target}}/" \
-          --fast-list \
-          --transfers 8 \
-          --checkers 16 \
-          --create-empty-src-dirs \
-          --checksum
 
     - name: 上传固件到 GitHub Artifacts
       uses: actions/upload-artifact@main
@@ -227,61 +195,16 @@ jobs:
       with:
         name: ${{ env.date3 }}_${{matrix.target}}
         path: ${{ env.FIRMWARE }}
-        
-    - name: 配置 Docker Buildx
-      uses: docker/setup-buildx-action@master
-      if: env.DOCKER_ID && env.DOCKER_PASSWD
-
-    - name: 配置 Docker Buildx
-      uses: docker/login-action@master
-      if: env.DOCKER_ID && env.DOCKER_PASSWD
-      with:
-        username: ${{ secrets.DOCKER_ID }}
-        password: ${{ secrets.DOCKER_PASSWD }}
-        
-    - name: 构建并推送 Docker 镜像
-      uses: docker/build-push-action@master
-      continue-on-error: true
-      if: env.DOCKER_ID && env.DOCKER_PASSWD && ! contains(github.event.action, 'noser')
-      with:
-        platforms: ${{ env.ARCH }}
-        file: Dockerfile
-        context: .
-        push: true
-        tags: |
-          ${{ secrets.DOCKER_ID }}/openwrt-6p:${{matrix.target}}
-          ${{ env.DOCKERTAG }}        
-
-    - name: 上传固件到 CowTransfer
-      id: cowtransfer
-      if: steps.organize.outputs.status == 'success' && env.UPLOAD_COWTRANSFER == 'true' && !cancelled()
-      run: |
-        curl -fsSL git.io/file-transfer | sh
-        ./transfer cow --block 2621440 -s -p 64 --no-progress ${FIRMWARE} 2>&1 | tee cowtransfer.log
-        echo "::warning file=cowtransfer.com::$(cat cowtransfer.log | grep https)"
-        echo "url=$(cat cowtransfer.log | grep https | cut -f3 -d" ")" >> $GITHUB_OUTPUT
-
-    - name: 上传固件到 WeTransfer
-      id: wetransfer
-      if: steps.organize.outputs.status == 'success' && env.UPLOAD_WETRANSFER == 'true' && !cancelled()
-      run: |
-        curl -fsSL git.io/file-transfer | sh
-        ./transfer wet -s -p 16 --no-progress ${FIRMWARE} 2>&1 | tee wetransfer.log
-        echo "::warning file=wetransfer.com::$(cat wetransfer.log | grep https)"
-        echo "url=$(cat wetransfer.log | grep https | cut -f3 -d" ")" >> $GITHUB_OUTPUT
 
     - name: 生成 Release 信息
       id: tag
       if: success() && env.UPLOAD_RELEASE == 'true' && !cancelled()
       run: |
-        R2_PUBLIC_BASE_URL="${{ secrets.R2_PUBLIC_BASE_URL }}"
-        [ -z "$R2_PUBLIC_BASE_URL" ] && R2_PUBLIC_BASE_URL="https://down.dllkids.xyz"
-        R2_LINK="${R2_PUBLIC_BASE_URL%/}/firmware/${{matrix.target}}/"
-        echo -e "墙内外加速下载 🎈:\n" >> release.txt
-        echo -e "[Cloudflare R2]($R2_LINK)\n" >> release.txt
-        touch release.txt
-        [ $UPLOAD_COWTRANSFER = true ] && echo "🔗 [Cowtransfer](${{ steps.cowtransfer.outputs.url }})" >> release.txt
-        [ $UPLOAD_WETRANSFER = true ] && echo "🔗 [WeTransfer](${{ steps.wetransfer.outputs.url }})" >> release.txt
+        echo "OpenWrt Lean 固件" > release.txt
+        echo "" >> release.txt
+        echo "编译时间：${{ env.date }}" >> release.txt
+        echo "编译目标：${{ matrix.target }}" >> release.txt
+        echo "status=success" >> $GITHUB_OUTPUT
         echo "status=success" >> $GITHUB_OUTPUT
 
     - name: 上传固件到 GitHub Release
