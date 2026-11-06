@@ -4,7 +4,7 @@
 # Author: kenzo
 #=================================================
 
-name: openwrt_24.10
+name: ImmortalWrt_24.10
 
 on:
   repository_dispatch:
@@ -29,7 +29,7 @@ jobs:
     runs-on: ubuntu-latest   
     if: github.event.repository.owner.id == github.event.sender.id
 
-    name: Build ${{matrix.target}}
+    name: 编译 ImmortalWrt 24.10
     strategy:
       fail-fast: false
       matrix:
