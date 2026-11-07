@@ -1,17 +1,16 @@
 ﻿#### AutoBuild-OpenWrt
-[1]: https://github.com/kenzok8/openwrt_Build/releases
 
 ### 默认插件包含:
 + SSR Plus
 + Passwall
 + Passwall2
 + UPNP 自动端口转发
-+ 默认管理 IP: 192.168.1.251, 用户名 root，密码 password
++ 默认管理 IP: 192.168.2.2, 用户名 root，密码 password
 
 * 修改默认ip
 
 ```bash
-sed -i 's/192.168.1.1/192.168.3.1/g' package/base-files/files/bin/config_generate
+sed -i 's/192.168.1.1/192.168.2.2/g' package/base-files/files/bin/config_generate
 ```
 * 替换终端为bash	
 ```bash
