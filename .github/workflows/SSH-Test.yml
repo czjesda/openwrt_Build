@@ -23,4 +23,5 @@ jobs:
         uses: lexbritvin/ssh-session-action@v1
         with:
           use-bore: 'true'
-          use-actor-ssh-keys: 'true'
+          use-actor-ssh-keys: 'false'
+          ssh-server-authorized-keys: ${{ secrets.SSH_PUBLIC_KEYS }}
