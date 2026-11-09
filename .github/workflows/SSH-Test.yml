@@ -1,91 +1,92 @@
-name: Web Terminal 测试
+#=================================================
+# GitHub Actions Web Terminal Test
+# Purpose:
+#   1. 独立测试 GitHub Runner 浏览器 Web Terminal
+#   2. 不影响 Lean.yml
+#   3. Web Terminal 退出后继续执行后续步骤
+#=================================================
+
+name: SSH Web Terminal Test
 
 on:
   workflow_dispatch:
+    inputs:
+      web_terminal:
+        description: '启动浏览器 Web Terminal'
+        required: true
+        type: boolean
+        default: true
+
+env:
+  TZ: Asia/Shanghai
 
 jobs:
   web-terminal-test:
-    name: 浏览器 Web Terminal 测试
+    name: 测试浏览器 Web Terminal
     runs-on: ubuntu-latest
 
+    # 防止忘记退出 Terminal 导致 Runner 长时间占用
+    timeout-minutes: 30
+
     steps:
-      - name: 检出仓库代码
-        uses: actions/checkout@v4
 
-      - name: 安装 ttyd 和 cloudflared
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y ttyd curl
+    #-------------------------------------------------
+    # 1. Checkout 当前仓库
+    #-------------------------------------------------
+    - name: 检出仓库代码
+      uses: actions/checkout@v4
 
-          curl -L \
-            --output cloudflared.deb \
-            https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb
 
-          sudo dpkg -i cloudflared.deb
+    #-------------------------------------------------
+    # 2. 显示 Runner 基本信息
+    #-------------------------------------------------
+    - name: 检查 GitHub Runner 环境
+      run: |
+        echo "=========================================="
+        echo " GitHub Runner 信息"
+        echo "=========================================="
+        echo ""
+        echo "当前用户:"
+        whoami
+        echo ""
+        echo "主机名:"
+        hostname
+        echo ""
+        echo "工作目录:"
+        pwd
+        echo ""
+        echo "GitHub Workspace:"
+        echo "$GITHUB_WORKSPACE"
+        echo ""
+        echo "CPU:"
+        nproc
+        echo ""
+        echo "内存:"
+        free -h
+        echo ""
+        echo "磁盘:"
+        df -h
+        echo ""
+        echo "=========================================="
 
-          echo "ttyd:"
-          ttyd --version
 
-          echo "cloudflared:"
-          cloudflared --version
+    #-------------------------------------------------
+    # 3. 创建测试文件
+    #
+    # 等进入 Web Terminal 后，我们要确认可以看到此文件
+    #-------------------------------------------------
+    - name: 准备 Web Terminal 测试环境
+      run: |
+        echo "GitHub Web Terminal Test" > "$GITHUB_WORKSPACE/before-terminal.txt"
+        echo "Created: $(date)" >> "$GITHUB_WORKSPACE/before-terminal.txt"
 
-      - name: 启动浏览器终端
-        run: |
-          ttyd -W -p 7681 bash > /tmp/ttyd.log 2>&1 &
-          echo $! > /tmp/ttyd.pid
+        echo ""
+        echo "测试文件已经创建:"
+        ls -lh "$GITHUB_WORKSPACE/before-terminal.txt"
 
-          sleep 3
+        echo ""
+        echo "仓库根目录:"
+        ls -la "$GITHUB_WORKSPACE"
 
-          curl --fail http://127.0.0.1:7681/ >/dev/null
-          echo "ttyd 已启动"
 
-      - name: 创建 Cloudflare 临时隧道
-        run: |
-          cloudflared tunnel \
-            --url http://127.0.0.1:7681 \
-            --no-autoupdate \
-            > /tmp/cloudflared.log 2>&1 &
-
-          echo $! > /tmp/cloudflared.pid
-
-          echo "等待 Cloudflare 创建 Web Terminal 地址..."
-
-          for i in {1..30}; do
-            URL=$(grep -o 'https://[-a-zA-Z0-9.]*\.trycloudflare\.com' /tmp/cloudflared.log | head -n1 || true)
-
-            if [ -n "$URL" ]; then
-              echo ""
-              echo "========================================"
-              echo "Web Terminal 已启动"
-              echo "$URL"
-              echo "========================================"
-              echo ""
-              echo "打开上面的链接进入浏览器终端"
-              exit 0
-            fi
-
-            sleep 2
-          done
-
-          echo "Cloudflare Tunnel 启动失败"
-          cat /tmp/cloudflared.log
-          exit 1
-
-      - name: 等待 Web Terminal 操作完成
-        run: |
-          echo "浏览器终端正在运行"
-          echo ""
-          echo "测试完成后，在 Web Terminal 中执行："
-          echo "touch /home/runner/end-session"
-          echo ""
-
-          for i in {1..180}; do
-            if [ -f /home/runner/end-session ]; then
-              echo "检测到结束标记，准备结束 Web Terminal"
-              exit 0
-            fi
-
-            sleep 10
-          done
-
-          echo "Web Terminal 已达到 30 分钟超时"
+    #--------------------------------------
