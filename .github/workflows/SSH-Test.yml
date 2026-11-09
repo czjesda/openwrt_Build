@@ -1,0 +1,27 @@
+name: SSH Web Terminal Test
+
+on:
+  workflow_dispatch:
+
+jobs:
+  ssh-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: 检出仓库代码
+        uses: actions/checkout@v4
+
+      - name: 显示 Runner 信息
+        run: |
+          echo "=== GitHub Runner ==="
+          echo "User: $(whoami)"
+          echo "Host: $(hostname)"
+          echo "PWD: $(pwd)"
+          echo "CPU: $(nproc)"
+          free -h
+          df -h
+
+      - name: 启动浏览器 Web Terminal
+        uses: Warpbuilds/action-debugger@v1.3
+        timeout-minutes: 20
