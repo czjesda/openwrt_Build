@@ -71,13 +71,28 @@ fi
 echo ""
 echo "========== 自定义配置检查 =========="
 
-grep -n '192.168.2.2' "$CONFIG"
-grep -n 'Dragon' "$CONFIG"
+
+echo "默认 IP:"
+grep -n '192.168.2.2' "$CONFIG" || true
 
 echo ""
-echo "Argon 编译配置："
-grep 'CONFIG_PACKAGE_luci-theme-argon=y' "$BUILD_CONFIG"
+echo "主机名相关配置:"
+grep -nE 'hostname|OpenWrt|Dragon' "$CONFIG" || true
 
 echo ""
-echo "========== DIY 配置执行结束 =========="
+echo "Argon 编译配置:"
+grep 'CONFIG_PACKAGE_luci-theme-argon=y' "$BUILD_CONFIG" || true
+
+echo ""
+echo "Bootstrap 编译配置:"
+grep 'CONFIG_PACKAGE_luci-theme-bootstrap=y' "$BUILD_CONFIG" || true
+
+echo ""
+echo "默认设置文件:"
+grep -nE 'passwd|shadow|argon|bootstrap|design' \
+openwrt/feeds/smpackage/.github/diy/default-settings || true
+
+echo ""
+echo "========== DIY 检查结束 =========="
+
 
