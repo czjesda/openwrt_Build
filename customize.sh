@@ -1,18 +1,83 @@
+
 #!/bin/bash
-#===============================================
-# 修改默认ip
-sed -i 's/192.168.1.1/192.168.2.2/g' openwrt/package/base-files/files/bin/config_generate
+#=================================================
+# Lean OpenWrt DIY Custom Settings
+# GitHub Actions
+#=================================================
 
-# 取消bootstrap为默认主题
-sed -i 's/luci-theme-bootstrap/luci-theme-argon/g' feeds/luci/collections/luci/Makefile
+set -e
 
-# 删除默认密码
-sed -i "/CYXluq4wUazHjmCDBCqXF/d" package/lean/default-settings/files/zzz-default-settings
+echo "========== 开始执行自定义配置 =========="
 
-# Modify hostname
-sed -i 's/OpenWrt/Dragon/g' openwrt/package/base-files/files/bin/config_generate
+# 1. 修改默认 IP
+CONFIG="openwrt/package/base-files/files/bin/config_generate"
 
-#2. Custom settings
-#sed -i 's?zstd$?zstd ucl upx\n$(curdir)/upx/compile := $(curdir)/ucl/compile?g' tools/Makefile
-#sed -i 's/$(TARGET_DIR)) install/$(TARGET_DIR)) install --force-overwrite/' package/Makefile
-#sed -i 's/root:.*/root:$1$tTPCBw1t$ldzfp37h5lSpO9VXk4uUE\/:18336:0:99999:7:::/g' package/base-files/files/etc/shadow
+if [ ! -f "$CONFIG" ]; then
+    echo "ERROR: 找不到 config_generate"
+    exit 1
+fi
+
+sed -i 's/192.168.1.1/192.168.2.2/g' "$CONFIG"
+echo "[PASS] 默认 IP：192.168.2.2"
+
+# 2. 修改默认主机名
+sed -i 's/OpenWrt/Dragon/g' "$CONFIG"
+echo "[PASS] 默认主机名：Dragon"
+
+# 3. 设置 Argon 为默认主题
+THEME_MAKEFILE="openwrt/feeds/luci/collections/luci/Makefile"
+LUCI_CONFIG="openwrt/feeds/luci/modules/luci-base/root/etc/config/luci"
+BUILD_CONFIG="openwrt/.config"
+
+if [ -f "$THEME_MAKEFILE" ]; then
+    sed -i 's/luci-theme-bootstrap/luci-theme-argon/g' "$THEME_MAKEFILE"
+fi
+
+# 修改编译配置：保留 Argon，取消 Bootstrap
+if [ -f "$BUILD_CONFIG" ]; then
+    sed -i \
+      '/^CONFIG_PACKAGE_luci-theme-bootstrap=/d;
+       /^# CONFIG_PACKAGE_luci-theme-bootstrap is not set/d;
+       /^CONFIG_PACKAGE_luci-theme-argon=/d;
+       /^# CONFIG_PACKAGE_luci-theme-argon is not set/d' \
+      "$BUILD_CONFIG"
+
+    echo 'CONFIG_PACKAGE_luci-theme-argon=y' >> "$BUILD_CONFIG"
+
+    # 取消原来的 design 默认主题选择
+    sed -i '/^CONFIG_DEFAULT_luci-theme-design=y$/d' "$BUILD_CONFIG"
+fi
+
+# 4. 修改默认主题路径及默认密码源文件
+DEFAULT_SOURCE="openwrt/feeds/smpackage/.github/diy/default-settings"
+
+if [ -f "$DEFAULT_SOURCE" ]; then
+
+    # 将原来的主题路径改成 Argon
+    sed -i \
+      -e 's#/luci-static/bootstrap#/luci-static/argon#g' \
+      -e 's#/luci-static/design#/luci-static/argon#g' \
+      "$DEFAULT_SOURCE"
+
+    # 删除 Lean 原始默认密码设置
+    sed -i '/CYXluq4wUazHjmCDBCqXF/d' "$DEFAULT_SOURCE"
+
+    echo "[PASS] 已处理默认设置源文件"
+
+else
+    echo "WARNING: 找不到 smpackage 默认设置源文件"
+fi
+
+echo ""
+echo "========== 自定义配置检查 =========="
+
+grep -n '192.168.2.2' "$CONFIG"
+grep -n 'Dragon' "$CONFIG"
+
+echo ""
+echo "Argon 编译配置："
+grep 'CONFIG_PACKAGE_luci-theme-argon=y' "$BUILD_CONFIG"
+
+echo ""
+echo "========== DIY 配置执行结束 =========="
+
