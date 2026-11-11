@@ -63,17 +63,3 @@ cd /home/runner/work/openwrt_Build/openwrt_Build
 touch end-session
 exit
 ```
-
-之后无需操作，Actions 会自动继续完成：
-
-**下载依赖 → 编译 → Artifact → Release**
-
----
-
-### ⚙️ 当前镜像参数
-
-- Kernel Partition：`64 MiB`
-- RootFS Partition：`400 MiB`
-- 架构：`x86_64`
-- 文件系统：`SquashFS`
-- 启动方式：`BIOS + UEFI`
