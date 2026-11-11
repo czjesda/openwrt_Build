@@ -1,4 +1,3 @@
-
 #!/bin/bash
 #=================================================
 # Lean OpenWrt DIY Custom Settings
@@ -53,6 +52,10 @@ if [ -f "$BUILD_CONFIG" ]; then
         -e '/^# CONFIG_PACKAGE_luci-app-vsftpd is not set$/d' \
         -e '/^CONFIG_PACKAGE_vsftpd=/d' \
         -e '/^# CONFIG_PACKAGE_vsftpd is not set$/d' \
+        -e '/^CONFIG_PACKAGE_luci-app-upnp=/d' \
+        -e '/^# CONFIG_PACKAGE_luci-app-upnp is not set$/d' \
+        -e '/^CONFIG_PACKAGE_miniupnpd-nftables=/d' \
+        -e '/^# CONFIG_PACKAGE_miniupnpd-nftables is not set$/d' \
         -e '/^CONFIG_PACKAGE_vlmcsd=/d' \
         -e '/^# CONFIG_PACKAGE_vlmcsd is not set$/d' \
         -e '/^CONFIG_PACKAGE_nlbwmon=/d' \
@@ -89,6 +92,7 @@ CONFIG_PACKAGE_luci-theme-argon=y
 # CONFIG_PACKAGE_luci-app-nlbwmon is not set
 # CONFIG_PACKAGE_luci-app-vlmcsd is not set
 # CONFIG_PACKAGE_luci-app-vsftpd is not set
+# CONFIG_PACKAGE_luci-app-upnp is not set
 
 # 删除对应底层软件包
 # CONFIG_PACKAGE_vsftpd is not set
@@ -98,6 +102,7 @@ CONFIG_PACKAGE_luci-theme-argon=y
 # CONFIG_PACKAGE_ddns-scripts-services is not set
 # CONFIG_PACKAGE_ddns-scripts_aliyun is not set
 # CONFIG_PACKAGE_ddns-scripts_dnspod is not set
+# CONFIG_PACKAGE_miniupnpd-nftables is not set
 EOF
 
     echo "[PASS] 已设置 Argon，并关闭 DDNS/NLBWMon/VLMCSd/VSFTPD"
