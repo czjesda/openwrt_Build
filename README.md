@@ -7,7 +7,6 @@
 - ✅ SSR Plus+
 - ✅ PassWall
 - ✅ PassWall2
-- ✅ Argon
 
 **默认设置**
 
