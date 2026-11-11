@@ -37,6 +37,16 @@ else
     echo "[WARNING] 找不到 LuCI 配置文件"
 fi
 
+# 3.1 修改 luci-light 默认主题依赖
+if [ -f "$LUCI_LIGHT_MAKEFILE" ]; then
+    sed -i \
+        's/luci-theme-bootstrap/luci-theme-argon/g' \
+        "$LUCI_LIGHT_MAKEFILE"
+    echo "[PASS] luci-light 默认主题依赖设置为 Argon"
+else
+    echo "[WARNING] 找不到 luci-light Makefile"
+fi
+
 # 4. 修改编译配置
 if [ -f "$BUILD_CONFIG" ]; then
 
