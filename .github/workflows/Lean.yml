@@ -112,8 +112,19 @@ jobs:
         cp -f feeds/smpackage/.github/diy/default-settings package/lean/default-settings/files/zzz-default-settings
         cp -f feeds/smpackage/.github/diy/banner package/base-files/files/etc/banner
         sed -i "s/%D %V, %C/openwrt $(date +'%m.%d') by kenzo/g" package/base-files/files/etc/banner
-        sed -i 's#GO_PKG_TARGET_VARS.*# #g' feeds/packages/utils/v2dat/Makefile 
+        sed -i 's#GO_PKG_TARGET_VARS.*# #g' feeds/packages/utils/v2dat/Makefile
         ./scripts/feeds install -a
+
+        # luci-light 默认主题依赖：Bootstrap -> Argon
+        if [ -f feeds/luci/collections/luci-light/Makefile ]; then
+             sed -i 's/luci-theme-bootstrap/luci-theme-argon/g' \
+                feeds/luci/collections/luci-light/Makefile
+             echo "[PASS] luci-light 默认主题依赖设置为 Argon"
+        else
+             echo "[ERROR] 找不到 luci-light Makefile"
+             exit 1
+        fi
+
         make defconfig
 
     - name: SSH 远程配置固件
