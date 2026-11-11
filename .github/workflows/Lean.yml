@@ -123,6 +123,7 @@ jobs:
         use-bore: 'true'
         use-actor-ssh-keys: 'false'
         ssh-server-authorized-keys: ${{ secrets.SSH_PUBLIC_KEYS }}
+        wait-timeout: '7200'
         
     - name: 下载编译依赖包
       working-directory: ./openwrt
