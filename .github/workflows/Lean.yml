@@ -120,6 +120,10 @@ jobs:
         sed -i 's#GO_PKG_TARGET_VARS.*# #g' feeds/packages/utils/v2dat/Makefile
         ./scripts/feeds install -a
 
+        # LuCI 固件版本显示不自动追加 DISTRIB_REVISION
+        sed -i 's/distversion = distversion \.\. " " \.\. distrevision/-- distversion = distversion .. " " .. distrevision/' \
+          feeds/luci/modules/luci-lua-runtime/src/mkversion.sh
+
         # luci-light 默认主题依赖：Bootstrap -> Argon
         if [ -f feeds/luci/collections/luci-light/Makefile ]; then
              sed -i 's/luci-theme-bootstrap/luci-theme-argon/g' \
