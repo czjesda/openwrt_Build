@@ -126,8 +126,8 @@ jobs:
           feeds/luci/modules/luci-lua-runtime/src/mkversion.sh
 
         # LuCI 状态页固件版本不显示 revision
-        sed -i "s/boardinfo\.release\.revision?boardinfo\.release\.revision:''/''/" \
-          feeds/luci/modules/luci-mod-status/htdocs/luci-static/resources/view/status/include/10_system.js
+        sed -i "s/boardinfo\.release\.revision ? boardinfo\.release\.revision : ''/''/" \
+           feeds/luci/modules/luci-mod-status/htdocs/luci-static/resources/view/status/include/10_system.js
 
         # luci-light 默认主题依赖：Bootstrap -> Argon
         if [ -f feeds/luci/collections/luci-light/Makefile ]; then
