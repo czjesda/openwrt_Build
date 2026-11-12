@@ -113,6 +113,7 @@ jobs:
         sed -i 's/by kenzo/by xiaowalu/g' package/lean/default-settings/files/zzz-default-settings
         sed -i 's/kenzo_build/czjesda_build/g' package/lean/default-settings/files/zzz-default-settings
         sed -i '/kenzo_date=/a\. /etc/openwrt_release' package/lean/default-settings/files/zzz-default-settings
+        sed -i '/\. \/etc\/openwrt_release/a\sed -i "s|^OPENWRT_RELEASE=.*|OPENWRT_RELEASE=\\"OpenWrt $DISTRIB_RELEASE by xiaowalu $kenzo_date\\"|" /usr/lib/os-release' package/lean/default-settings/files/zzz-default-settings
         sed -i '/sed -i .*DISTRIB_DESCRIPTION=/c\sed -i "s|^DISTRIB_DESCRIPTION=.*|DISTRIB_DESCRIPTION='\''OpenWrt $DISTRIB_RELEASE by xiaowalu $kenzo_date'\''|" /etc/openwrt_release' package/lean/default-settings/files/zzz-default-settings
         cp -f feeds/smpackage/.github/diy/banner package/base-files/files/etc/banner
         sed -i 's/by kenzo/by xiaowalu/g' package/base-files/files/etc/banner
@@ -123,6 +124,10 @@ jobs:
         # LuCI 固件版本显示不自动追加 DISTRIB_REVISION
         sed -i 's/distversion = distversion \.\. " " \.\. distrevision/-- distversion = distversion .. " " .. distrevision/' \
           feeds/luci/modules/luci-lua-runtime/src/mkversion.sh
+
+        # LuCI 状态页固件版本不显示 revision
+        sed -i "s/boardinfo\.release\.revision?boardinfo\.release\.revision:''/''/" \
+          feeds/luci/modules/luci-mod-status/htdocs/luci-static/resources/view/status/include/10_system.js
 
         # luci-light 默认主题依赖：Bootstrap -> Argon
         if [ -f feeds/luci/collections/luci-light/Makefile ]; then
