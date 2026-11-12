@@ -110,13 +110,13 @@ jobs:
         cd openwrt
         rm -rf feeds/luci/applications/luci-app-openclash
         cp -f feeds/smpackage/.github/diy/default-settings package/lean/default-settings/files/zzz-default-settings
-        sed -i 's/by kenzo/by 龙城混混/g' package/lean/default-settings/files/zzz-default-settings
+        sed -i 's/by kenzo/by xiaowalu/g' package/lean/default-settings/files/zzz-default-settings
         sed -i 's/kenzo_build/czjesda_build/g' package/lean/default-settings/files/zzz-default-settings
         sed -i '/kenzo_date=/a\. /etc/openwrt_release' package/lean/default-settings/files/zzz-default-settings
-        sed -i '/sed -i .*DISTRIB_DESCRIPTION=/c\sed -i "s|^DISTRIB_DESCRIPTION=.*|DISTRIB_DESCRIPTION='\''OpenWrt $DISTRIB_RELEASE by 龙城混混 $kenzo_date'\''|" /etc/openwrt_release' package/lean/default-settings/files/zzz-default-settings
+        sed -i '/sed -i .*DISTRIB_DESCRIPTION=/c\sed -i "s|^DISTRIB_DESCRIPTION=.*|DISTRIB_DESCRIPTION='\''OpenWrt $DISTRIB_RELEASE by xiaowalu $kenzo_date'\''|" /etc/openwrt_release' package/lean/default-settings/files/zzz-default-settings
         cp -f feeds/smpackage/.github/diy/banner package/base-files/files/etc/banner
-        sed -i 's/by kenzo/by 龙城混混/g' package/base-files/files/etc/banner
-        sed -i "s/%D %V, %C/openwrt $(date +'%m.%d') by 龙城混混/g" package/base-files/files/etc/banner
+        sed -i 's/by kenzo/by xiaowalu/g' package/base-files/files/etc/banner
+        sed -i "s/%D %V, %C/openwrt $(date +'%m.%d') by xiaowalu/g" package/base-files/files/etc/banner
         sed -i 's#GO_PKG_TARGET_VARS.*# #g' feeds/packages/utils/v2dat/Makefile
         ./scripts/feeds install -a
 
