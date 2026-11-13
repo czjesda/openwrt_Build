@@ -108,16 +108,21 @@ jobs:
         [ -e $CONFIG_FILE ] && mv $CONFIG_FILE openwrt/.config
         chmod +x ./customize.sh && ./customize.sh
         cd openwrt
-        
+
+        echo "========== 99-default_network 完整内容 =========="
+        cat package/base-files/files/etc/board.d/99-default_network
+
         echo "========== 检查 x86 网络初始化 =========="
         grep -n -A20 -B5 'qemu-standard-pc\|ucidef_set_interfaces_lan_wan' \
-        target/linux/x86/base-files/etc/board.d/02_network
+            target/linux/x86/base-files/etc/board.d/02_network || true
+
         echo "========== 检查默认网络生成 =========="
         grep -n -E 'eth0|eth1|eth2|eth3|lan|wan|br-lan' \
-        package/base-files/files/bin/config_generate | head -100
+            package/base-files/files/bin/config_generate | head -100 || true
+
         echo "========== 检查网络初始化脚本 =========="
         grep -RniE 'eth0|eth1|eth2|eth3' \
-        target/linux/x86/base-files package/base-files/files 2>/dev/null | head -100
+            target/linux/x86/base-files package/base-files/files 2>/dev/null | head -100 || true
         
         rm -rf feeds/luci/applications/luci-app-openclash
         cp -f feeds/smpackage/.github/diy/default-settings package/lean/default-settings/files/zzz-default-settings
