@@ -113,7 +113,52 @@ fi
 echo "[INFO] 保留原版 root 密码初始化逻辑"
 echo "[INFO] 当前源码 root shadow 模板应为空密码"
 
-# 6. 检查
+
+# 6. 设置 QEMU 虚拟机网卡默认分配
+NETWORK="$OPENWRT_DIR/target/linux/x86/base-files/etc/board.d/02_network"
+
+if [ -f "$NETWORK" ]; then
+    python3 - "$NETWORK" <<'PY'
+import pathlib
+import re
+import sys
+
+path = pathlib.Path(sys.argv[1])
+content = path.read_text()
+
+if "qemu-standard-pc-i440fx-piix-1996)" not in content:
+    block = """qemu-standard-pc-i440fx-piix-1996)
+    lan_ports=""
+    for dev in eth1 eth2 eth3; do
+        [ -d "/sys/class/net/$dev" ] && \\
+            lan_ports="${lan_ports:+$lan_ports }$dev"
+    done
+
+    if [ -d /sys/class/net/eth0 ] && [ -n "$lan_ports" ]; then
+        ucidef_set_interfaces_lan_wan "$lan_ports" "eth0"
+    fi
+    ;;
+"""
+
+    match = re.search(r'(?m)^esac\s*$', content)
+
+    if not match:
+        raise SystemExit("ERROR: 找不到 02_network 中的 esac")
+
+    content = content[:match.start()] + block + content[match.start():]
+    path.write_text(content)
+
+print("[PASS] QEMU 默认网络分配规则已设置")
+PY
+else
+    echo "[ERROR] 找不到 x86 02_network 文件"
+    exit 1
+fi
+echo ""
+echo "========== 检查 QEMU 网卡规则 =========="
+grep -n -A15 'qemu-standard-pc-i440fx-piix-1996' "$NETWORK" || true
+
+# 7. 检查
 echo ""
 echo "========== 自定义配置检查 =========="
 
