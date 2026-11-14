@@ -103,7 +103,7 @@ jobs:
 
     - name: Defconfig ${{matrix.target}}
       env:
-        CONFIG_FILE: '${{matrix.target}}.config'
+        CONFIG_FILE: 'configs/${{matrix.target}}.config'
       run: |
         [ -e $CONFIG_FILE ] && mv $CONFIG_FILE openwrt/.config
         chmod +x ./customize.sh && ./customize.sh
