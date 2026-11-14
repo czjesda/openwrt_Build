@@ -33,7 +33,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        target: [ctc_25.12]
+        target: [ImmortalWrt_25.12]
     
     steps:
     - name: 检出仓库代码
