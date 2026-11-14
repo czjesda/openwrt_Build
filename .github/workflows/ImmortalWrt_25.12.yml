@@ -18,14 +18,10 @@ on:
 env:
   UPLOAD_BIN_DIR: false
   UPLOAD_FIRMWARE: true
-  UPLOAD_COWTRANSFER: false
-  UPLOAD_WETRANSFER: false
   UPLOAD_RELEASE: true
   SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
   REMOTE_HOST: ${{ secrets.REMOTE_HOST }}
   REMOTE_PORT: ${{ secrets.REMOTE_PORT }}
-  DOCKER_ID: ${{ secrets.DOCKER_ID }}
-  DOCKER_PASSWD: ${{ secrets.DOCKER_PASSWD }}  
   TZ: Asia/Shanghai
 
 jobs:
@@ -79,7 +75,6 @@ jobs:
         echo "date=$(date +'%m/%d_%Y_%H/%M')" >> $GITHUB_ENV
         echo "date2=$(date +'%Y/%m %d')" >> $GITHUB_ENV
         echo "date3=$(date +'%m.%d')" >> $GITHUB_ENV
-        echo "DOCKERTAG=${{ secrets.DOCKER_ID }}/openwrt-6p:latest" >> $GITHUB_ENV
         VERSION="$(echo "${{github.event.action}}" | grep -Eo " [0-9.]+" | sed -e 's/ //')" || true
         [ "$VERSION" ] && echo "VERSION=$VERSION" >> $GITHUB_ENV || echo "VERSION=$(date +'%m.%d')" >> $GITHUB_ENV         
         
@@ -127,7 +122,7 @@ jobs:
         ./scripts/feeds update -a && ./scripts/feeds install -a
         patch -p1 < feeds/smpackage/.github/diy/patches/001-dnsmasq-lxc-jail.patch
         cp -f feeds/smpackage/.github/diy/10_system.js feeds/luci/modules/luci-mod-status/htdocs/luci-static/resources/view/status/include/10_system.js || true
-        cp -f feeds/smpackage/.github/diy/${{matrix.target}}.config .config && make defconfig
+        make defconfig
         
     - name: 修复软件包哈希兼容问题
       working-directory: ./openwrt
@@ -164,13 +159,6 @@ jobs:
     - name: 检查磁盘空间
       if: (!cancelled())
       run: df -hT
-
-    - name: 上传BIN编译目录
-      uses: actions/upload-artifact@main
-      if: success() && env.UPLOAD_BIN_DIR == 'true'
-      with:
-        name: OpenWrt_bin${{ env.DEVICE_NAME }}${{ env.FILE_DATE }}
-        path: openwrt/bin
 
     - name: 整理固件文件
       id: organize
