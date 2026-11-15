@@ -56,6 +56,16 @@ if [ -f "$BUILD_CONFIG" ]; then
         -e '/^# CONFIG_PACKAGE_luci-app-upnp is not set$/d' \
         -e '/^CONFIG_PACKAGE_miniupnpd-nftables=/d' \
         -e '/^# CONFIG_PACKAGE_miniupnpd-nftables is not set$/d' \
+        -e '/^CONFIG_PACKAGE_luci-app-passwall2=/d' \
+        -e '/^# CONFIG_PACKAGE_luci-app-passwall2 is not set$/d' \
+        -e '/^CONFIG_PACKAGE_luci-app-passwall2_Basic_Core_Xray=/d' \
+        -e '/^# CONFIG_PACKAGE_luci-app-passwall2_Basic_Core_Xray is not set$/d' \
+        -e '/^CONFIG_PACKAGE_luci-app-passwall2_Nftables_Transparent_Proxy=/d' \
+        -e '/^# CONFIG_PACKAGE_luci-app-passwall2_Nftables_Transparent_Proxy is not set$/d' \
+        -e '/^CONFIG_PACKAGE_luci-app-passwall2_INCLUDE_Haproxy=/d' \
+        -e '/^# CONFIG_PACKAGE_luci-app-passwall2_INCLUDE_Haproxy is not set$/d' \
+        -e '/^CONFIG_PACKAGE_luci-i18n-passwall2-zh-cn=/d' \
+        -e '/^# CONFIG_PACKAGE_luci-i18n-passwall2-zh-cn is not set$/d' \
         -e '/^CONFIG_PACKAGE_vlmcsd=/d' \
         -e '/^# CONFIG_PACKAGE_vlmcsd is not set$/d' \
         -e '/^CONFIG_PACKAGE_nlbwmon=/d' \
