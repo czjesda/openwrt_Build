@@ -80,6 +80,8 @@ if [ -f "$BUILD_CONFIG" ]; then
         -e '/^# CONFIG_PACKAGE_ddns-scripts_dnspod is not set$/d' \
         -e '/^CONFIG_PACKAGE_luci-theme-argon=/d' \
         -e '/^# CONFIG_PACKAGE_luci-theme-argon is not set$/d' \
+        -e '/^CONFIG_PACKAGE_luci-theme-carbon=/d' \
+        -e '/^# CONFIG_PACKAGE_luci-theme-carbon is not set$/d' \
         -e '/^CONFIG_PACKAGE_luci-theme-bootstrap=/d' \
         -e '/^# CONFIG_PACKAGE_luci-theme-bootstrap is not set$/d' \
         -e '/^CONFIG_PACKAGE_luci-theme-design=/d' \
