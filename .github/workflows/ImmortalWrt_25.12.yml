@@ -4,7 +4,7 @@
 # Author: xiaowalu
 #=================================================
 
-name: ImmortalWrt 25.12 固件编译
+name: ImmortalWrt 25.12
 
 on:
   repository_dispatch:
