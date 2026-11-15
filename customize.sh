@@ -81,8 +81,9 @@ if [ -f "$BUILD_CONFIG" ]; then
     # 写入最终需要的配置
     cat >> "$BUILD_CONFIG" <<'EOF'
 
-# LuCI 主题
+# LuCI 主题：保留 Argon 和 Carbon，默认使用 Argon
 CONFIG_PACKAGE_luci-theme-argon=y
+CONFIG_PACKAGE_luci-theme-carbon=y
 # CONFIG_PACKAGE_luci-theme-bootstrap is not set
 # CONFIG_PACKAGE_luci-theme-design is not set
 # CONFIG_DEFAULT_luci-theme-design is not set
