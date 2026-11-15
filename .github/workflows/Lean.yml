@@ -233,13 +233,6 @@ jobs:
         echo "FIRMWARE=$PWD" >> $GITHUB_ENV
         echo "status=success" >> $GITHUB_OUTPUT
 
-    - name: 上传固件到 GitHub Artifacts
-      uses: actions/upload-artifact@main
-      if: steps.organize.outputs.status == 'success' && !cancelled()
-      with:
-        name: ${{ env.date3 }}_${{matrix.target}}
-        path: ${{ env.FIRMWARE }}
-
     - name: 生成 Release 信息
       id: tag
       if: success() && env.UPLOAD_RELEASE == 'true' && !cancelled()
