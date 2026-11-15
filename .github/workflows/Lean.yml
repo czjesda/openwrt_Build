@@ -101,7 +101,7 @@ jobs:
         matches = []
         for match in pattern.finditer(source):
             body = match.group(2)
-            hosts = re.findall(r'https?://([^/]+)/kernel', body)
+            hosts = re.findall(r'https?://([^/]+)/', body)
             expected = {
                 "mirror.nju.edu.cn",
                 "mirrors.hust.edu.cn",
