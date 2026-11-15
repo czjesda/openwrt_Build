@@ -89,6 +89,58 @@ jobs:
       run: |
         git clone --depth 1 $REPO_URL -b $REPO_BRANCH openwrt
         cd openwrt
+
+        # 调整 Linux 内核源码下载镜像：优先官方 CDN，其余镜像作为备用
+        python3 - <<'PY'
+        from pathlib import Path
+        import re
+
+        path = Path("scripts/download.pl")
+        source = path.read_text()
+        pattern = re.compile(r'(foreach my \\$dir \\(@extra\\) \\{\\n)(.*?)(\\n[ \\t]*\\})', re.S)
+        matches = []
+        for match in pattern.finditer(source):
+            body = match.group(2)
+            hosts = re.findall(r'https?://([^/]+)/kernel', body)
+            expected = {
+                "mirror.nju.edu.cn",
+                "mirrors.hust.edu.cn",
+                "mirrors.ustc.edu.cn",
+                "cdn.kernel.org",
+                "mirrors.mit.edu",
+                "ftp.nara.wide.ad.jp",
+            }
+            if set(hosts) == expected and len(hosts) == 6:
+                matches.append(match)
+
+        if len(matches) != 1:
+            raise SystemExit(f"[ERROR] 内核镜像列表匹配数量异常：{len(matches)}，停止修改")
+
+        match = matches[0]
+        body = match.group(2)
+        lines = body.splitlines()
+        push_lines = [line for line in lines if "push @mirrors" in line]
+        other_lines = [line for line in lines if line.strip() and "push @mirrors" not in line]
+        if len(push_lines) != 6 or other_lines:
+            raise SystemExit("[ERROR] 内核镜像列表结构与预期不符，停止修改")
+
+        indent = re.match(r"^\\s*", push_lines[0]).group(0)
+        ordered = [
+            "https://cdn.kernel.org/pub/$dir",
+            "https://mirror.nju.edu.cn/kernel.org/$dir",
+            "https://mirrors.hust.edu.cn/kernel.org/$dir",
+            "https://mirrors.ustc.edu.cn/kernel.org/$dir",
+            "https://mirrors.mit.edu/kernel/$dir",
+            "http://ftp.nara.wide.ad.jp/pub/kernel.org/$dir",
+        ]
+        replacement = "\\n".join(f'{indent}push @mirrors, "{url}";' for url in ordered)
+        updated = source[:match.start(2)] + replacement + source[match.end(2):]
+        path.write_text(updated)
+        print("[PASS] Linux 内核下载镜像顺序已调整：")
+        for url in ordered:
+            print(f"  {url}")
+        PY
+
         sed -i '$a src-git smpackage https://github.com/kenzok8/small-package' feeds.conf.default
 
     - name: 配置编译磁盘空间
