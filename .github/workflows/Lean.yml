@@ -15,8 +15,12 @@ on:
   workflow_dispatch:
     inputs:
       ssh:
-        description: 'ssh'
-        required: false
+        description: '是否进入 SSH 远程配置终端？选择 true 进入，false 跳过'
+        required: true
+        type: choice
+        options:
+          - 'false'
+          - 'true'
         default: 'false'
 
 env:
