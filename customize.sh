@@ -144,8 +144,13 @@ content = path.read_text()
 block = """*)
     lan_ports=""
     for dev in eth1 eth2 eth3; do
-        [ -d "/sys/class/net/$dev" ] && \\
-            lan_ports="${lan_ports:+$lan_ports }$dev"
+        if [ -d "/sys/class/net/$dev" ]; then
+            if [ -z "$lan_ports" ]; then
+                lan_ports="$dev"
+            else
+                lan_ports="$lan_ports $dev"
+            fi
+        fi
     done
 
     if [ -d /sys/class/net/eth0 ] && [ -n "$lan_ports" ]; then
@@ -154,65 +159,18 @@ block = """*)
     ;;
 """
 
-# 只替换本脚本之前添加的 QEMU 专用规则；其他上游设备规则保持不变。
+# 只替换之前添加的 QEMU 专用规则；其他上游设备规则保持不变。
 qemu_pattern = re.compile(
-    r'(?ms)^qemu-standard-pc-i440fx-piix-1996\)\n'
-    r'.*?^\s*;;\n'
+    r"(?ms)^qemu-standard-pc-i440fx-piix-1996\)\n"
+    r".*?^[ \t]*;;\n"
 )
+
 if qemu_pattern.search(content):
     content = qemu_pattern.sub(block, content, count=1)
-elif re.search(r'(?m)^\*\)\s*
-
-# 7. 检查
-echo ""
-echo "========== 自定义配置检查 =========="
-
-echo "[IP]"
-grep -n '192.168.2.2' "$CONFIG" || true
-
-echo ""
-echo "[主机名]"
-grep -n "hostname='Dragon'" "$CONFIG" || true
-
-echo ""
-echo "[LuCI 主题路径]"
-grep -n 'mediaurlbase' "$LUCI_CONFIG" || true
-
-echo ""
-echo "[Argon 配置]"
-grep -nE 'CONFIG_PACKAGE_luci-theme-(argon|bootstrap|design)|CONFIG_DEFAULT_luci-theme-design' \
-    "$BUILD_CONFIG" || true
-
-echo ""
-echo "========== DIY 检查结束 =========="
-, content):
+elif re.search(r"(?m)^\*\)[ \t]*$", content):
     raise SystemExit("ERROR: 02_network 已有通用 *) 分支，拒绝重复或覆盖")
 else:
-    match = re.search(r'(?m)^esac\s*
-
-# 7. 检查
-echo ""
-echo "========== 自定义配置检查 =========="
-
-echo "[IP]"
-grep -n '192.168.2.2' "$CONFIG" || true
-
-echo ""
-echo "[主机名]"
-grep -n "hostname='Dragon'" "$CONFIG" || true
-
-echo ""
-echo "[LuCI 主题路径]"
-grep -n 'mediaurlbase' "$LUCI_CONFIG" || true
-
-echo ""
-echo "[Argon 配置]"
-grep -nE 'CONFIG_PACKAGE_luci-theme-(argon|bootstrap|design)|CONFIG_DEFAULT_luci-theme-design' \
-    "$BUILD_CONFIG" || true
-
-echo ""
-echo "========== DIY 检查结束 =========="
-, content)
+    match = re.search(r"(?m)^esac[ \t]*$", content)
     if not match:
         raise SystemExit("ERROR: 找不到 02_network 中的 esac")
     content = content[:match.start()] + block + content[match.start():]
