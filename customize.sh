@@ -127,7 +127,9 @@ echo "[INFO] 保留原版 root 密码初始化逻辑"
 echo "[INFO] 当前源码 root shadow 模板应为空密码"
 
 
-# 6. 设置 QEMU 虚拟机网卡默认分配
+# 6. 设置 x86 通用网卡默认分配
+# 保留上游已定义的特殊设备规则；未单独匹配的 x86 设备使用 eth0 作为 WAN，
+# 其余实际存在的 eth1-eth3 作为 LAN。
 NETWORK="$OPENWRT_DIR/target/linux/x86/base-files/etc/board.d/02_network"
 
 if [ -f "$NETWORK" ]; then
@@ -139,8 +141,7 @@ import sys
 path = pathlib.Path(sys.argv[1])
 content = path.read_text()
 
-if "qemu-standard-pc-i440fx-piix-1996)" not in content:
-    block = """qemu-standard-pc-i440fx-piix-1996)
+block = """*)
     lan_ports=""
     for dev in eth1 eth2 eth3; do
         [ -d "/sys/class/net/$dev" ] && \\
@@ -153,23 +154,79 @@ if "qemu-standard-pc-i440fx-piix-1996)" not in content:
     ;;
 """
 
-    match = re.search(r'(?m)^esac\s*$', content)
+# 只替换本脚本之前添加的 QEMU 专用规则；其他上游设备规则保持不变。
+qemu_pattern = re.compile(
+    r'(?ms)^qemu-standard-pc-i440fx-piix-1996\)\n'
+    r'.*?^\s*;;\n'
+)
+if qemu_pattern.search(content):
+    content = qemu_pattern.sub(block, content, count=1)
+elif re.search(r'(?m)^\*\)\s*
 
+# 7. 检查
+echo ""
+echo "========== 自定义配置检查 =========="
+
+echo "[IP]"
+grep -n '192.168.2.2' "$CONFIG" || true
+
+echo ""
+echo "[主机名]"
+grep -n "hostname='Dragon'" "$CONFIG" || true
+
+echo ""
+echo "[LuCI 主题路径]"
+grep -n 'mediaurlbase' "$LUCI_CONFIG" || true
+
+echo ""
+echo "[Argon 配置]"
+grep -nE 'CONFIG_PACKAGE_luci-theme-(argon|bootstrap|design)|CONFIG_DEFAULT_luci-theme-design' \
+    "$BUILD_CONFIG" || true
+
+echo ""
+echo "========== DIY 检查结束 =========="
+, content):
+    raise SystemExit("ERROR: 02_network 已有通用 *) 分支，拒绝重复或覆盖")
+else:
+    match = re.search(r'(?m)^esac\s*
+
+# 7. 检查
+echo ""
+echo "========== 自定义配置检查 =========="
+
+echo "[IP]"
+grep -n '192.168.2.2' "$CONFIG" || true
+
+echo ""
+echo "[主机名]"
+grep -n "hostname='Dragon'" "$CONFIG" || true
+
+echo ""
+echo "[LuCI 主题路径]"
+grep -n 'mediaurlbase' "$LUCI_CONFIG" || true
+
+echo ""
+echo "[Argon 配置]"
+grep -nE 'CONFIG_PACKAGE_luci-theme-(argon|bootstrap|design)|CONFIG_DEFAULT_luci-theme-design' \
+    "$BUILD_CONFIG" || true
+
+echo ""
+echo "========== DIY 检查结束 =========="
+, content)
     if not match:
         raise SystemExit("ERROR: 找不到 02_network 中的 esac")
-
     content = content[:match.start()] + block + content[match.start():]
-    path.write_text(content)
 
-print("[PASS] QEMU 默认网络分配规则已设置")
+path.write_text(content)
+print("[PASS] x86 通用网卡规则已设置：eth0 为 WAN，存在的 eth1-eth3 为 LAN")
 PY
 else
     echo "[ERROR] 找不到 x86 02_network 文件"
     exit 1
 fi
 echo ""
-echo "========== 检查 QEMU 网卡规则 =========="
-grep -n -A15 'qemu-standard-pc-i440fx-piix-1996' "$NETWORK" || true
+echo "========== 检查 x86 通用网卡规则 =========="
+grep -n -A12 '^\*)' "$NETWORK" || true
 
 # 7. 检查
 echo ""
