@@ -109,6 +109,27 @@ jobs:
         restore-keys: |
           openwrt-dl-v1-${{ runner.os }}-${{ matrix.target }}-
 
+    - name: 预下载并校验 erofs-utils
+      run: |
+        set -euo pipefail
+        FILE="/mnt/openwrt/dl/erofs-utils-1.8.10.tar.gz"
+        URL="https://deb.debian.org/debian/pool/main/e/erofs-utils/erofs-utils_1.8.10.orig.tar.gz"
+        HASH="05eb4edebe11decce6ecb34e98d2f80c8cd283c2f2967d8ba7efd58418570514"
+        TMP="${FILE}.tmp"
+
+        mkdir -p "$(dirname "$FILE")"
+        if [ -f "$FILE" ] && echo "$HASH  $FILE" | sha256sum -c -; then
+          echo "[PASS] erofs-utils 1.8.10 已存在且 SHA-256 校验通过"
+        else
+          rm -f "$FILE" "$TMP"
+          trap 'rm -f "$TMP"' EXIT
+          curl --fail --location --retry 5 --retry-all-errors --connect-timeout 20 "$URL" -o "$TMP"
+          echo "$HASH  $TMP" | sha256sum -c -
+          mv "$TMP" "$FILE"
+          trap - EXIT
+          echo "[PASS] 已从 Debian 官方源下载 erofs-utils 1.8.10，SHA-256 校验通过"
+        fi
+
     - name: 更新 feeds
       working-directory: ./openwrt
       run: |
