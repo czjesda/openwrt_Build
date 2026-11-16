@@ -113,7 +113,7 @@ jobs:
       run: |
         set -euo pipefail
         FILE="/mnt/openwrt/dl/erofs-utils-1.8.10.tar.gz"
-        URL="https://deb.debian.org/debian/pool/main/e/erofs-utils/erofs-utils_1.8.10.orig.tar.gz"
+        URL="https://sources.voidlinux.org/erofs-utils-1.8.10/erofs-utils-1.8.10.tar.gz"
         HASH="05eb4edebe11decce6ecb34e98d2f80c8cd283c2f2967d8ba7efd58418570514"
         TMP="${FILE}.tmp"
 
