@@ -101,6 +101,10 @@ jobs:
         ln -sf /mnt/openwrt/bin openwrt/bin
         ln -sf /mnt/openwrt/staging_dir openwrt/staging_dir
 
+    - name: 修复下载缓存目录权限
+      run: |
+        sudo chown "$(id -u):$(id -g)" /mnt/openwrt/dl
+
     - name: 恢复 OpenWrt 下载缓存
       uses: actions/cache/restore@v4
       with:
