@@ -85,6 +85,7 @@ jobs:
         DEBIAN_FRONTEND: noninteractive
       run: |
         sudo mkdir -p -m 777 /mnt/openwrt/dl /mnt/openwrt/bin /mnt/openwrt/staging_dir
+        sudo chown -R $USER:$USER /mnt/openwrt
         ln -sf /mnt/openwrt/dl openwrt/dl
         ln -sf /mnt/openwrt/bin openwrt/bin
         ln -sf /mnt/openwrt/staging_dir openwrt/staging_dir
