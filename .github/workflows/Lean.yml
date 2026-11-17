@@ -11,7 +11,6 @@ permissions:
   actions: write
 
 on:
-  repository_dispatch:
   workflow_dispatch:
     inputs:
       ssh:
@@ -24,13 +23,6 @@ on:
         default: 'false'
 
 env:
-  UPLOAD_BIN_DIR: false
-  UPLOAD_FIRMWARE: true
-  UPLOAD_RELEASE: true
-  SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-  PASSWORD: ${{ secrets.PASSWORD }}
-  REMOTE_HOST: ${{ secrets.REMOTE_HOST }}
-  REMOTE_PORT: ${{ secrets.REMOTE_PORT }}
   TZ: Asia/Shanghai
 
 jobs:
@@ -46,7 +38,7 @@ jobs:
     
     steps:
     - name: 检出仓库代码
-      uses: actions/checkout@main
+      uses: actions/checkout@v4
 
     - name: 释放磁盘空间
       uses: coder-xiaomo/free-disk-space@main
@@ -71,16 +63,12 @@ jobs:
         libelf-dev device-tree-compiler libgmp3-dev libmpc-dev libfuse-dev
         sudo apt-get autoremove -y --purge
         sudo apt-get clean
-        sudo timedatectl set-timezone "Asia/Shanghai"
         
     - name: 获取当前日期
-      id: date
       run: |
         echo "date=$(date +'%Y.%m.%d-%H%M')" >> $GITHUB_ENV
         echo "date2=$(date +'%m/%d %Y')" >> $GITHUB_ENV
-        echo "date3=$(date +'%m.%d')" >> $GITHUB_ENV
-        VERSION="$(echo "${{github.event.action}}" | grep -Eo " [0-9.]+" | sed -e 's/ //')" || true
-        [ "$VERSION" ] && echo "VERSION=$VERSION" >> $GITHUB_ENV || echo "VERSION=$(date +'%m.%d')" >> $GITHUB_ENV
+        echo "VERSION=$(date +'%m.%d')" >> $GITHUB_ENV
         
     - name: 克隆源码
       env: 
@@ -110,7 +98,11 @@ jobs:
       env:
         CONFIG_FILE: 'configs/${{matrix.target}}.config'
       run: |
-        [ -e $CONFIG_FILE ] && mv $CONFIG_FILE openwrt/.config
+        if [ ! -f "$CONFIG_FILE" ]; then
+          echo "[ERROR] 找不到配置文件：$CONFIG_FILE"
+          exit 1
+        fi
+        cp "$CONFIG_FILE" openwrt/.config
         chmod +x ./customize.sh && ./customize.sh
         cd openwrt
 
@@ -171,34 +163,35 @@ jobs:
         ssh-server-authorized-keys: ${{ secrets.SSH_PUBLIC_KEYS }}
         wait-timeout: '3600'
         
-    - name: 下载编译依赖包
-      working-directory: ./openwrt
-      run: |
-        make download -j$(($(nproc)+1)) V=s
-        find dl -size -1024c -exec rm -f {} \;
-        
+    - name: 恢复 OpenWrt 下载缓存
+      id: restore-download-cache
+      uses: actions/cache/restore@v4
+      with:
+        path: /mnt/openwrt/dl
+        key: openwrt-dl-v1-${{ runner.os }}-${{ matrix.target }}-${{ hashFiles('configs/Lean.config') }}
+        restore-keys: |
+          openwrt-dl-v1-${{ runner.os }}-${{ matrix.target }}-   
+          
     - name: 缓存编译文件
       uses: stupidloud/cachewrtbuild@main
       with:
         ccache: 'true'
         mixkey: ${{ matrix.target }}
         clean: ${{ contains(github.event.action, 'nocache') }}
-        prefix: ${{ github.workspace }}/openwrt
+        prefix: ${{ github.workspace }}/openwrt      
+        
+    - name: 下载编译依赖包
+      working-directory: ./openwrt
+      run: |
+        make download -j$(($(nproc)+1)) V=s
+        find dl -size -1024c -exec rm -f {} \;
     
     - name: 检查磁盘空间
       run: |
-        shopt -s extglob
-        cd openwrt
-        if [[ -f staging_dir/*${{ env.MTARGET }}*/bin ]]; then
-            rm -rf staging_dir/!(*${{ env.MTARGET }}*|host|hostpkg) build_dir/!(*${{ env.MTARGET }}*|host|hostpkg)
-        fi
         df -hT
-
-    - name: 修复 opkg 哈希兼容问题
-      working-directory: ./openwrt
-      run: |
-        sed -i -E 's/^(PKG_MIRROR_HASH|PKG_HASH):=.*/\1:=skip/' package/system/opkg/Makefile || true
-        [ -f package/network/utils/fullconenat-nft/Makefile ] && sed -i -E 's/^PKG_MIRROR_HASH:=.*/PKG_MIRROR_HASH:=skip/' package/network/utils/fullconenat-nft/Makefile || true
+        du -sh openwrt/dl 2>/dev/null || true
+        du -sh openwrt/build_dir 2>/dev/null || true
+        du -sh openwrt/staging_dir 2>/dev/null || true
 
     - name: 编译 OpenWrt 固件
       working-directory: ./openwrt
@@ -207,42 +200,42 @@ jobs:
         make -j$(($(nproc)+1)) || make -j1 V=s
 
     - name: 保存 OpenWrt 下载缓存
-      if: always() && !cancelled()
+      if: always() && !cancelled() && steps.restore-download-cache.outputs.cache-hit != 'true'
       uses: actions/cache/save@v4
       with:
         path: /mnt/openwrt/dl
-        key: openwrt-dl-v1-${{ runner.os }}-${{ matrix.target }}-${{ github.run_id }}-${{ github.run_attempt }}
-
-    - name: 上传 BIN 编译目录
-      uses: actions/upload-artifact@main
-      if: success() && env.UPLOAD_BIN_DIR == 'true'
-      with:
-        name: OpenWrt_bin${{ env.DEVICE_NAME }}${{ env.FILE_DATE }}
-        path: openwrt/bin
+        key: openwrt-dl-v1-${{ runner.os }}-${{ matrix.target }}-${{ hashFiles('configs/Lean.config') }}
 
     - name: 整理固件文件
       id: organize
-      if: success() && env.UPLOAD_FIRMWARE == 'true' && !cancelled()
+      if: success() && !cancelled()
       run: |
-        mkdir firmware
-        mv -f openwrt/bin/targets/*/*/{*combined*,*sysupgrade*} ./firmware/ 2>/dev/null || true
+        mkdir -p firmware
+        find openwrt/bin/targets -maxdepth 3 -type f \
+          \( -name '*combined*' -o -name '*sysupgrade*' \) \
+          -exec cp -f {} firmware/ \;
+        if ! find firmware -maxdepth 1 -type f \
+          \( -name '*combined*' -o -name '*sysupgrade*' \) | grep -q .; then
+          echo "[ERROR] 未找到可发布的 OpenWrt 固件文件"
+          echo "========== bin/targets 实际文件 =========="
+          find openwrt/bin/targets -maxdepth 3 -type f -print
+          exit 1
+        fi
         cp openwrt/.config ./firmware/${{matrix.target}}.config 2>/dev/null || true
         cp openwrt/build_dir/target-*/linux-*/linux-*/.config ./firmware/${{matrix.target}}_kernel.config 2>/dev/null || true
         cd firmware
         echo "v${{ env.date2 }}" > version.txt
-        md5_output=$( (md5sum *squashfs-sysupgrade* 2>/dev/null || md5sum *squashfs-combined-efi* 2>/dev/null) | awk '{print $1}' ) || true
-        echo "$md5_output" >> version.txt
         rename -v "s/^openwrt/${{ env.VERSION }}-openwrt/" * || true
         rename -v "s/friendlyarm_//" *gz || true
+        md5_output=$(md5sum *combined* *sysupgrade* 2>/dev/null || true)
         echo "$md5_output" >> version.txt
         echo ${{matrix.target}} >> version.txt
-        rm -rf sha256sums
         echo "FIRMWARE=$PWD" >> $GITHUB_ENV
         echo "status=success" >> $GITHUB_OUTPUT
 
     - name: 生成 Release 信息
       id: tag
-      if: success() && env.UPLOAD_RELEASE == 'true' && !cancelled()
+      if: success() && !cancelled()
       run: |
         echo "OpenWrt Lean 固件" > release.txt
         echo "" >> release.txt
@@ -264,14 +257,14 @@ jobs:
     - name: 清理旧的 Actions 运行记录
       uses: Mattraks/delete-workflow-runs@main
       with:
-        retain_days: 1
+        retain_days: 5
         keep_minimum_runs: 0
 
     - name: 清理旧的 Releases
       uses: dev-drprasad/delete-older-releases@master
-      if: success() && env.UPLOAD_RELEASE == 'true' && !cancelled()
+      if: success() && !cancelled()
       with:
-        keep_latest: 6
+        keep_latest: 5
         delete_tags: true
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
