@@ -92,9 +92,6 @@ if [ -f "$BUILD_CONFIG" ]; then
 
     # 写入最终需要的配置
     cat >> "$BUILD_CONFIG" <<'EOF'
-    # 补齐 Lean master 当前必需的依赖
-    CONFIG_PACKAGE_pciids=y
-    CONFIG_PACKAGE_luci-mod-network=y
 
 # LuCI 主题：保留 Argon 和 Carbon，默认使用 Argon
 CONFIG_PACKAGE_luci-theme-argon=y
