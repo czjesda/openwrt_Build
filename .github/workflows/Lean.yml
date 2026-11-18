@@ -188,6 +188,12 @@ jobs:
       working-directory: ./openwrt
       run: |
         make download -j1 V=s
+
+        if [ ! -s dl/erofs-utils-1.8.10.tar.gz ]; then
+          echo "[ERROR] erofs-utils-1.8.10.tar.gz 下载失败"
+          exit 1
+        fi
+        
         find dl -size -1024c -exec rm -f {} \;
     
     - name: 检查磁盘空间
