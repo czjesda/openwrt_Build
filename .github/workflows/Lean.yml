@@ -94,6 +94,17 @@ jobs:
       working-directory: ./openwrt
       run: |
         ./scripts/feeds update -a
+        
+        echo "========== packages feed =========="
+        git -C feeds/packages log -1 --oneline
+        echo "========== luci feed =========="
+        git -C feeds/luci log -1 --oneline
+        echo "========== 检查关键依赖 =========="
+        [ -d feeds/luci/modules/luci-mod-network ] \
+          && echo "[PASS] luci-mod-network exists" \
+          || echo "[FAIL] luci-mod-network missing"
+
+        find feeds/packages -type d -name 'pciids' -print | head
 
     - name: 生成编译配置 ${{matrix.target}}
       env:
