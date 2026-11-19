@@ -23,8 +23,6 @@ on:
       default: 'false'
 
 env:
-  UPLOAD_FIRMWARE: true
-  UPLOAD_RELEASE: true
   TZ: Asia/Shanghai
 
 jobs:
@@ -94,7 +92,14 @@ jobs:
     - name: 更新软件源
       working-directory: ./openwrt
       run: |
-        ./scripts/feeds update -a  
+        ./scripts/feeds update -a
+
+        echo "========== packages feed =========="
+        git -C feeds/packages log -1 --oneline || true
+        echo "========== luci feed =========="
+        git -C feeds/luci log -1 --oneline || true
+        echo "========== smpackage feed =========="
+        git -C feeds/smpackage log -1 --oneline || true 
         
     - name: 生成编译配置 ${{matrix.target}}
       env:
@@ -109,8 +114,6 @@ jobs:
         chmod +x ./customize_immortalwrt_25.12.sh && ./customize_immortalwrt_25.12.sh
         cd openwrt
         rm -rf feeds/smpackage/{base-files,dnsmasq,firewall*,fullconenat,libnftnl,nftables,ppp,opkg,ucl,upx,vsftpd-alt,miniupnpd-iptables,wireless-regdb,nginx,luci-lib-ipkg}
-        rm -rf feeds/packages/lang/golang
-        git clone https://github.com/kenzok8/golang -b 1.26 feeds/packages/lang/golang
         rm -rf feeds/packages/net/{alist,adguardhome,brook,chinadns-ng,dns2socks,dns2tcp,hysteria,ipt2socks}
         rm -rf feeds/packages/net/{lua-neturl,microsocks,naiveproxy,pdnsd-alt,redsocks2,simple-obfs,sing-box,ssocks,tcping,tuic-client}
         rm -rf feeds/packages/net/{gost,mosdns,redsocks*,smartdns,trojan*,v2ray*,xray*}	
@@ -130,20 +133,18 @@ jobs:
       timeout-minutes: 60
       with:
         limit-access-to-actor: true
-        wait-timeout-minutes: 60
+        wait-timeout-minutes: 180
         
-    - name: 修复软件包哈希兼容问题
-      working-directory: ./openwrt
-      run: |
-        [ -f package/network/utils/fullconenat-nft/Makefile ] && sed -i -E 's/^PKG_MIRROR_HASH:=.*/PKG_MIRROR_HASH:=skip/' package/network/utils/fullconenat-nft/Makefile || true
-
     - name: 禁用 Rust CI 的 LLVM 自动下载
       working-directory: ./openwrt
       run: |
-        sed -i 's/--set=llvm\.download-ci-llvm=true/--set=llvm.download-ci-llvm=false/' \
-          feeds/packages/lang/rust/Makefile
-        grep -q -- '--set=llvm.download-ci-llvm=false' \
-          feeds/packages/lang/rust/Makefile
+        RUST_MAKEFILE="feeds/packages/lang/rust/Makefile"
+        if [ -f "$RUST_MAKEFILE" ] && grep -q -- '--set=llvm\.download-ci-llvm=true' "$RUST_MAKEFILE"; then
+          sed -i 's/--set=llvm\.download-ci-llvm=true/--set=llvm.download-ci-llvm=false/' "$RUST_MAKEFILE"
+          echo "[PASS] 已禁用 Rust CI LLVM 自动下载"
+        else
+          echo "[INFO] 当前 Rust Makefile 无需修改"
+        fi
 
     - name: 恢复 ImmortalWrt 下载缓存
       id: restore-download-cache
@@ -180,27 +181,34 @@ jobs:
 
     - name: 整理固件文件
       id: organize
-      if: success() && env.UPLOAD_FIRMWARE == 'true' && !cancelled()
+      if: success() && !cancelled()
       run: |
-        mkdir firmware
-        mv -f openwrt/bin/targets/*/*/{*combined*,*sysupgrade*} ./firmware/ 2>/dev/null || true
+        mkdir -p firmware
+        find openwrt/bin/targets -maxdepth 3 -type f \
+          \( -name '*combined*' -o -name '*sysupgrade*' \) \
+          -exec cp -f {} firmware/ \;
+        if ! find firmware -maxdepth 1 -type f \
+          \( -name '*combined*' -o -name '*sysupgrade*' \) | grep -q .; then
+          echo "[ERROR] 未找到可发布的 ImmortalWrt 固件文件"
+          echo "========== bin/targets 实际文件 =========="
+          find openwrt/bin/targets -maxdepth 3 -type f -print
+          exit 1
+        fi
         cp openwrt/.config ./firmware/ImmortalWrt_25.12.config 2>/dev/null || true
         cp openwrt/build_dir/target-*/linux-*/linux-*/.config ./firmware/${{matrix.target}}_kernel.config 2>/dev/null || true
         cd firmware
         echo "v${{ env.date2 }}" > version.txt
-        md5_output=$( (md5sum *squashfs-sysupgrade* 2>/dev/null || md5sum *squashfs-combined-efi* 2>/dev/null) | awk '{print $1}' ) || true
+        rename -v "s/^immortalwrt/${{ env.VERSION }}-immortalwrt/" * || true
+        rename -v "s/friendlyarm_//" *.gz 2>/dev/null || true
+        md5_output=$(md5sum *combined* *sysupgrade* 2>/dev/null || true)
         echo "$md5_output" >> version.txt
-        rename -v "s/^immortalwrt/${{ env.VERSION }}-openwrt/" * || true
-        rename -v "s/friendlyarm_//" *gz || true
-        echo "$md5_output" >> version.txt
-        echo ${{matrix.target}} >> version.txt     
-        rm -rf sha256sums
+        echo "${{ matrix.target }}" >> version.txt
         echo "FIRMWARE=$PWD" >> $GITHUB_ENV
         echo "status=success" >> $GITHUB_OUTPUT
 
     - name: 生成Release 信息
       id: tag
-      if: success() && env.UPLOAD_RELEASE == 'true' && !cancelled()
+      if: success() && !cancelled()
       run: |
         echo "ImmortalWrt 25.12 固件" > release.txt
         echo "" >> release.txt
@@ -212,7 +220,7 @@ jobs:
       uses: softprops/action-gh-release@v2
       if: steps.tag.outputs.status == 'success' && !cancelled()
       env:
-        GITHUB_TOKEN: ${{ secrets.REPO_TOKEN }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         files: "${{ env.FIRMWARE }}/*"
         name: ${{ env.date2 }} ${{matrix.target}}
@@ -222,15 +230,15 @@ jobs:
     - name: 清理旧的Actions运行记录
       uses: Mattraks/delete-workflow-runs@main
       with:
-        retain_days: 1
+        retain_days: 5
         keep_minimum_runs: 0
 
     - name: 清理旧的Releases
       uses: dev-drprasad/delete-older-releases@master
-      if: success() && env.UPLOAD_RELEASE == 'true' && !cancelled()
+      if: success() && !cancelled()
       with:
-        keep_latest: 6
+        keep_latest: 5
         delete_tags: true
       env:
-        GITHUB_TOKEN: ${{ secrets.REPO_TOKEN }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         
