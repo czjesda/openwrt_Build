@@ -127,13 +127,14 @@ jobs:
         cp -f feeds/smpackage/.github/diy/10_system.js feeds/luci/modules/luci-mod-status/htdocs/luci-static/resources/view/status/include/10_system.js || true
         make defconfig
 
-    - name: SSH远程连接（交互配置）
+     - name: SSH远程连接（交互配置）
       if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.ssh == 'true' }}
-      uses: owenthereal/action-upterm@v2.1.0
-      timeout-minutes: 180
+      uses: lexbritvin/ssh-session-action@v1
       with:
-        limit-access-to-actor: true
-        wait-timeout-minutes: 180
+        use-bore: 'true'
+        use-actor-ssh-keys: 'false'
+        ssh-server-authorized-keys: ${{ secrets.SSH_PUBLIC_KEYS }}
+        wait-timeout: '10800'
         
     - name: 禁用 Rust CI 的 LLVM 自动下载
       working-directory: ./openwrt
