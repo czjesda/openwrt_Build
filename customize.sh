@@ -186,6 +186,77 @@ echo ""
 echo "========== 检查 x86 通用网卡规则 =========="
 grep -n -A12 '^\*)' "$NETWORK" || true
 
+# 修复 LEDE json_overview_image_info.py 在生成 profiles.json 时的 unpack 错误
+JSON_SCRIPT="$OPENWRT_DIR/scripts/json_overview_image_info.py"
+
+python3 - "$JSON_SCRIPT" <<'PY'
+from pathlib import Path
+import sys
+
+path = Path(sys.argv[1])
+text = path.read_text()
+
+old = '''    default_packages, output["arch_packages"] = run(
+        [
+            "make",
+            "--no-print-directory",
+            "-C",
+            "target/linux/",
+            "val.DEFAULT_PACKAGES",
+            "val.ARCH_PACKAGES",
+        ],
+        stdout=PIPE,
+        stderr=PIPE,
+        check=True,
+        env=environ.copy().update({"TOPDIR": Path().cwd()}),
+        universal_newlines=True,
+    ).stdout.splitlines()
+'''
+
+new = '''    make_env = {**environ, "TOPDIR": str(Path.cwd())}
+
+    default_packages = run(
+        [
+            "make",
+            "--no-print-directory",
+            "-C",
+            "target/linux/",
+            "val.DEFAULT_PACKAGES",
+        ],
+        stdout=PIPE,
+        stderr=PIPE,
+        check=True,
+        env=make_env,
+        universal_newlines=True,
+    ).stdout.strip()
+
+    output["arch_packages"] = run(
+        [
+            "make",
+            "--no-print-directory",
+            "-C",
+            "target/linux/",
+            "val.ARCH_PACKAGES",
+        ],
+        stdout=PIPE,
+        stderr=PIPE,
+        check=True,
+        env=make_env,
+        universal_newlines=True,
+    ).stdout.strip()
+'''
+
+if old in text:
+    path.write_text(text.replace(old, new, 1))
+    print("[PASS] json_overview_image_info.py compatibility fix applied")
+elif "make_env = {**environ" in text:
+    print("[PASS] json_overview_image_info.py already fixed")
+else:
+    raise SystemExit("[ERROR] json_overview_image_info.py structure changed; refusing to patch")
+PY
+python3 -m py_compile "$JSON_SCRIPT"
+echo "[PASS] json_overview_image_info.py Python 语法检查通过"
+
 # 7. 检查
 echo ""
 echo "========== 自定义配置检查 =========="
