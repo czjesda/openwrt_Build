@@ -127,7 +127,7 @@ jobs:
         cp -f feeds/smpackage/.github/diy/10_system.js feeds/luci/modules/luci-mod-status/htdocs/luci-static/resources/view/status/include/10_system.js || true
         make defconfig
 
-     - name: SSH远程连接（交互配置）
+    - name: SSH远程连接（交互配置）
       if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.ssh == 'true' }}
       uses: lexbritvin/ssh-session-action@v1
       with:
