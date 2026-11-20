@@ -37,4 +37,22 @@ else
     exit 1
 fi
 
+
+# Xray-core 26.11.9 需要 Go >= 1.27，指定使用 Go 1.27 host toolchain
+XRAY_MAKEFILE="$OPENWRT_DIR/feeds/smpackage/xray-core/Makefile"
+if [ -f "$XRAY_MAKEFILE" ]; then
+    if grep -q "PKG_BUILD_DEPENDS:=golang/host" "$XRAY_MAKEFILE"; then
+        sed -i "s#PKG_BUILD_DEPENDS:=golang/host#PKG_BUILD_DEPENDS:=golang1.27/host#" "$XRAY_MAKEFILE"
+        echo "[PASS] Xray-core 已切换到 Go 1.27 host toolchain"
+    elif grep -q "PKG_BUILD_DEPENDS:=golang1.27/host" "$XRAY_MAKEFILE"; then
+        echo "[PASS] Xray-core 已使用 Go 1.27 host toolchain"
+    else
+        echo "[ERROR] Xray-core Go 构建依赖格式发生变化，请检查：$XRAY_MAKEFILE"
+        exit 1
+    fi
+else
+    echo "[ERROR] 找不到 Xray-core Makefile：$XRAY_MAKEFILE"
+    exit 1
+fi
+
 echo "========== ImmortalWrt 25.12 自定义配置完成 =========="
