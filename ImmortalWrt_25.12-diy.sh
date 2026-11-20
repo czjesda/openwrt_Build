@@ -55,4 +55,36 @@ else
     exit 1
 fi
 
+
+# 修改默认 LAN IP 和主机名
+CONFIG_GENERATE="$OPENWRT_DIR/package/base-files/files/bin/config_generate"
+if [ -f "$CONFIG_GENERATE" ]; then
+    sed -i "s/192\.168\.1\.1/192.168.2.1/g" "$CONFIG_GENERATE"
+    sed -i "s/hostname='ImmortalWrt'/hostname='Xiaowalu'/g" "$CONFIG_GENERATE"
+    echo "[PASS] 默认 LAN IP 已设置为 192.168.2.1"
+    echo "[PASS] 默认主机名已设置为 Xiaowalu"
+else
+    echo "[ERROR] 找不到 config_generate：$CONFIG_GENERATE"
+    exit 1
+fi
+
+
+# 自定义固件显示信息
+DEFAULT_SETTINGS="$OPENWRT_DIR/package/emortal/default-settings/files/99-default-settings"
+BANNER_FILE="$OPENWRT_DIR/package/base-files/files/etc/banner"
+if [ -f "$DEFAULT_SETTINGS" ]; then
+    sed -i "s/kenzo/xiaowalu/g" "$DEFAULT_SETTINGS"
+    echo "[PASS] ImmortalWrt 固件标记已修改为 xiaowalu"
+else
+    echo "[ERROR] 找不到 99-default-settings：$DEFAULT_SETTINGS"
+    exit 1
+fi
+if [ -f "$BANNER_FILE" ]; then
+    sed -i "s/by kenzo/by xiaowalu/g" "$BANNER_FILE"
+    echo "[PASS] Banner 已修改为 xiaowalu"
+else
+    echo "[ERROR] 找不到 banner：$BANNER_FILE"
+    exit 1
+fi
+
 echo "========== ImmortalWrt 25.12 自定义配置完成 =========="
