@@ -110,7 +110,6 @@ jobs:
           exit 1
         fi
         cp "$CONFIG_FILE" openwrt/.config
-        chmod +x ./ImmortalWrt_25.12-diy.sh && ./ImmortalWrt_25.12-diy.sh
         cd openwrt
         rm -rf feeds/smpackage/{base-files,dnsmasq,firewall*,fullconenat,libnftnl,nftables,ppp,opkg,ucl,upx,vsftpd-alt,miniupnpd-iptables,wireless-regdb,nginx,luci-lib-ipkg}
         rm -rf feeds/packages/net/{alist,adguardhome,brook,chinadns-ng,dns2socks,dns2tcp,hysteria,ipt2socks}
@@ -119,8 +118,11 @@ jobs:
         cp -f feeds/smpackage/.github/diy/default-settings package/emortal/default-settings/files/99-default-settings || true
         cp -f feeds/smpackage/.github/diy/banner package/emortal/default-settings/files/openwrt_banner || true
         cp -f feeds/smpackage/.github/diy/banner package/base-files/files/etc/banner
+        cd ..
+        chmod +x ./ImmortalWrt_25.12-diy.sh
+        ./ImmortalWrt_25.12-diy.sh
+        cd openwrt
         cp -f feeds/smpackage/.github/diy/index_x86.htm package/emortal/autocore/files/generic/index.htm || true
-        sed -i "s/%D %V, %C/openwrt $(date +'%m.%d') by kenzo/g" package/base-files/files/etc/banner
         ./scripts/feeds update -i && ./scripts/feeds install -a
         patch -p1 < feeds/smpackage/.github/diy/patches/001-dnsmasq-lxc-jail.patch
         cp -f feeds/smpackage/.github/diy/10_system.js feeds/luci/modules/luci-mod-status/htdocs/luci-static/resources/view/status/include/10_system.js || true
