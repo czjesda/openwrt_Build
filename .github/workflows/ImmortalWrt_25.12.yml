@@ -110,8 +110,7 @@ jobs:
           exit 1
         fi
         cp "$CONFIG_FILE" openwrt/.config
-
-        chmod +x ./customize_immortalwrt_25.12.sh && ./customize_immortalwrt_25.12.sh
+        chmod +x ./ImmortalWrt_25.12-diy.sh && ./ImmortalWrt_25.12-diy.sh
         cd openwrt
         rm -rf feeds/smpackage/{base-files,dnsmasq,firewall*,fullconenat,libnftnl,nftables,ppp,opkg,ucl,upx,vsftpd-alt,miniupnpd-iptables,wireless-regdb,nginx,luci-lib-ipkg}
         rm -rf feeds/packages/net/{alist,adguardhome,brook,chinadns-ng,dns2socks,dns2tcp,hysteria,ipt2socks}
