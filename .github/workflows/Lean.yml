@@ -118,7 +118,7 @@ jobs:
           exit 1
         fi
         cp "$CONFIG_FILE" openwrt/.config
-        chmod +x ./customize.sh && ./customize.sh
+        chmod +x ./Lean-diy.sh && ./Lean-diy.sh
         cd openwrt
 
         echo "========== 99-default_network 完整内容 =========="
