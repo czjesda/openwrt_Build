@@ -97,54 +97,6 @@ fi
 
 
 
-# x86 通用网卡默认分配：eth0 为 WAN，实际存在的 eth1-eth3 为 LAN
-NETWORK="$OPENWRT_DIR/target/linux/x86/base-files/etc/board.d/02_network"
-
-if [ -f "$NETWORK" ]; then
-    python3 - "$NETWORK" <<'PYNET'
-import pathlib
-import re
-import sys
-
-path = pathlib.Path(sys.argv[1])
-content = path.read_text()
-
-block = """*)
-        lan_ports=""
-        for dev in eth1 eth2 eth3; do
-                if [ -d "/sys/class/net/$dev" ]; then
-                        if [ -z "$lan_ports" ]; then
-                                lan_ports="$dev"
-                        else
-                                lan_ports="$lan_ports $dev"
-                        fi
-                fi
-        done
-
-        if [ -d /sys/class/net/eth0 ] && [ -n "$lan_ports" ]; then
-                ucidef_set_interfaces_lan_wan "$lan_ports" "eth0"
-        fi
-        ;;
-"""
-
-if re.search(r"(?m)^\*\)[ \t]*$", content):
-    raise SystemExit("ERROR: 02_network 已存在通用 *) 分支，拒绝重复添加")
-
-match = re.search(r"(?m)^esac[ \t]*$", content)
-if not match:
-    raise SystemExit("ERROR: 找不到 02_network 中的 esac")
-
-content = content[:match.start()] + block + content[match.start():]
-path.write_text(content)
-
-print("[PASS] x86 通用网卡规则已设置：eth0 为 WAN，存在的 eth1-eth3 为 LAN")
-PYNET
-else
-    echo "[ERROR] 找不到 x86 02_network 文件"
-    exit 1
-fi
-
-
 # 移除 LuCI 状态首页 Source Code 项
 SYSTEM_JS="$OPENWRT_DIR/feeds/smpackage/.github/diy/10_system.js"
 
