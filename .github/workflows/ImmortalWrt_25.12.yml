@@ -114,19 +114,49 @@ jobs:
         rm -rf feeds/smpackage/{base-files,dnsmasq,firewall*,fullconenat,libnftnl,nftables,ppp,opkg,ucl,upx,vsftpd-alt,miniupnpd-iptables,wireless-regdb,nginx,luci-lib-ipkg}
         rm -rf feeds/packages/net/{alist,adguardhome,brook,chinadns-ng,dns2socks,dns2tcp,hysteria,ipt2socks}
         rm -rf feeds/packages/net/{lua-neturl,microsocks,naiveproxy,pdnsd-alt,redsocks2,simple-obfs,sing-box,ssocks,tcping,tuic-client}
-        rm -rf feeds/packages/net/{gost,mosdns,redsocks*,smartdns,trojan*,v2ray*,xray*}	
+        rm -rf feeds/packages/net/{gost,mosdns,redsocks*,smartdns,trojan*,v2ray*,xray*}
+        ./scripts/feeds update -i
+        ./scripts/feeds install -a
         cp -f feeds/smpackage/.github/diy/default-settings package/emortal/default-settings/files/99-default-settings || true
         cp -f feeds/smpackage/.github/diy/banner package/emortal/default-settings/files/openwrt_banner || true
         cp -f feeds/smpackage/.github/diy/banner package/base-files/files/etc/banner
+        cp -f feeds/smpackage/.github/diy/index_x86.htm package/emortal/autocore/files/generic/index.htm || true
+        patch -p1 < feeds/smpackage/.github/diy/patches/001-dnsmasq-lxc-jail.patch
+        cp -f feeds/smpackage/.github/diy/10_system.js \
+          feeds/luci/modules/luci-mod-status/htdocs/luci-static/resources/view/status/include/10_system.js || true
         cd ..
         chmod +x ./ImmortalWrt_25.12-diy.sh
         ./ImmortalWrt_25.12-diy.sh
         cd openwrt
-        cp -f feeds/smpackage/.github/diy/index_x86.htm package/emortal/autocore/files/generic/index.htm || true
-        ./scripts/feeds update -i && ./scripts/feeds install -a
-        patch -p1 < feeds/smpackage/.github/diy/patches/001-dnsmasq-lxc-jail.patch
-        cp -f feeds/smpackage/.github/diy/10_system.js feeds/luci/modules/luci-mod-status/htdocs/luci-static/resources/view/status/include/10_system.js || true
         make defconfig
+        echo "========== 最终配置验证 =========="
+        grep -q '^CONFIG_PACKAGE_luci-app-passwall=y$' .config || {
+          echo "[ERROR] PassWall 未进入最终配置"
+          exit 1
+        }
+        grep -q '^CONFIG_PACKAGE_luci-app-ssr-plus=y$' .config || {
+          echo "[ERROR] SSR Plus 未进入最终配置"
+          exit 1
+        }
+        grep -q '^CONFIG_PACKAGE_luci-theme-argon=y$' .config || {
+          echo "[ERROR] Argon 未进入最终配置"
+          exit 1
+        }
+        grep -q '^CONFIG_PACKAGE_luci-theme-carbon=y$' .config || {
+          echo "[ERROR] Carbon 未进入最终配置"
+          exit 1
+        }
+        echo "[PASS] PassWall"
+        echo "[PASS] SSR Plus"
+        echo "[PASS] Argon"
+        echo "[PASS] Carbon"
+        echo "========== LuCI 页面定制验证 =========="
+        ! grep -q "Source Code" \
+          feeds/luci/modules/luci-mod-status/htdocs/luci-static/resources/view/status/include/10_system.js || {
+          echo "[ERROR] Source Code 仍然存在"
+          exit 1
+        }
+        echo "[PASS] Source Code 已移除"
 
     - name: SSH远程连接（交互配置）
       if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.ssh == 'true' }}
