@@ -129,34 +129,38 @@ jobs:
         ./ImmortalWrt_25.12-diy.sh
         cd openwrt
         make defconfig
-        echo "========== 最终配置验证 =========="
-        grep -q '^CONFIG_PACKAGE_luci-app-passwall=y$' .config || {
-          echo "[ERROR] PassWall 未进入最终配置"
-          exit 1
-        }
-        grep -q '^CONFIG_PACKAGE_luci-app-ssr-plus=y$' .config || {
-          echo "[ERROR] SSR Plus 未进入最终配置"
-          exit 1
-        }
-        grep -q '^CONFIG_PACKAGE_luci-theme-argon=y$' .config || {
-          echo "[ERROR] Argon 未进入最终配置"
-          exit 1
-        }
-        grep -q '^CONFIG_PACKAGE_luci-theme-carbon=y$' .config || {
-          echo "[ERROR] Carbon 未进入最终配置"
-          exit 1
-        }
-        echo "[PASS] PassWall"
-        echo "[PASS] SSR Plus"
-        echo "[PASS] Argon"
-        echo "[PASS] Carbon"
-        echo "========== LuCI 页面定制验证 =========="
-        ! grep -q "Source Code" \
-          feeds/luci/modules/luci-mod-status/htdocs/luci-static/resources/view/status/include/10_system.js || {
-          echo "[ERROR] Source Code 仍然存在"
-          exit 1
-        }
-        echo "[PASS] Source Code 已移除"
+        if [ "${{ github.event.inputs.ssh }}" != "true" ]; then
+          echo "========== 最终配置验证 =========="
+          grep -q '^CONFIG_PACKAGE_luci-app-passwall=y$' .config || {
+            echo "[ERROR] PassWall 未进入最终配置"
+            exit 1
+          }
+          grep -q '^CONFIG_PACKAGE_luci-app-ssr-plus=y$' .config || {
+            echo "[ERROR] SSR Plus 未进入最终配置"
+            exit 1
+          }
+          grep -q '^CONFIG_PACKAGE_luci-theme-argon=y$' .config || {
+            echo "[ERROR] Argon 未进入最终配置"
+            exit 1
+          }
+          grep -q '^CONFIG_PACKAGE_luci-theme-carbon=y$' .config || {
+            echo "[ERROR] Carbon 未进入最终配置"
+            exit 1
+          }
+          echo "[PASS] PassWall"
+          echo "[PASS] SSR Plus"
+          echo "[PASS] Argon"
+          echo "[PASS] Carbon"
+          echo "========== LuCI 页面定制验证 =========="
+          ! grep -q "Source Code" \
+            feeds/luci/modules/luci-mod-status/htdocs/luci-static/resources/view/status/include/10_system.js || {
+            echo "[ERROR] Source Code 仍然存在"
+            exit 1
+          }
+          echo "[PASS] Source Code 已移除"
+        else
+          echo "[INFO] SSH 调试模式：暂时跳过最终配置验证"
+        fi
 
     - name: SSH远程连接（交互配置）
       if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.ssh == 'true' }}
