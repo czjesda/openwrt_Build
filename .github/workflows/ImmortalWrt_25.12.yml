@@ -124,6 +124,9 @@ jobs:
         echo "========== PassWall 来源检查 =========="
         readlink -f package/feeds/smpackage/luci-app-passwall
         grep -n 'PKG_VERSION' package/feeds/smpackage/luci-app-passwall/Makefile | head
+        echo "========== 重新加载最终编译配置 =========="
+        cp "../$CONFIG_FILE" .config
+        grep -E '^CONFIG_PACKAGE_luci-app-(passwall|ssr-plus)=|^CONFIG_PACKAGE_luci-theme-(argon|carbon)=|^# CONFIG_PACKAGE_luci-app-ssr-plus_INCLUDE_Mihomo is not set' .config
         cp -f feeds/smpackage/.github/diy/default-settings package/emortal/default-settings/files/99-default-settings || true
         cp -f feeds/smpackage/.github/diy/banner package/emortal/default-settings/files/openwrt_banner || true
         cp -f feeds/smpackage/.github/diy/banner package/base-files/files/etc/banner
