@@ -117,6 +117,13 @@ jobs:
         rm -rf feeds/packages/net/{gost,mosdns,redsocks*,smartdns,trojan*,v2ray*,xray*}
         ./scripts/feeds update -i
         ./scripts/feeds install -a
+        # PassWall：使用 smpackage 版本，避免官方 luci feed 同名包冲突
+        rm -f package/feeds/luci/luci-app-passwall
+        rm -rf feeds/luci/applications/luci-app-passwall
+        ./scripts/feeds install -p smpackage -f luci-app-passwall
+        echo "========== PassWall 来源检查 =========="
+        readlink -f package/feeds/smpackage/luci-app-passwall
+        grep -n 'PKG_VERSION' package/feeds/smpackage/luci-app-passwall/Makefile | head
         cp -f feeds/smpackage/.github/diy/default-settings package/emortal/default-settings/files/99-default-settings || true
         cp -f feeds/smpackage/.github/diy/banner package/emortal/default-settings/files/openwrt_banner || true
         cp -f feeds/smpackage/.github/diy/banner package/base-files/files/etc/banner
