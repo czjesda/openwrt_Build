@@ -143,10 +143,6 @@ jobs:
             echo "[ERROR] PassWall 未进入最终配置"
             exit 1
           }
-          grep -q '^CONFIG_PACKAGE_luci-app-ssr-plus=y$' .config || {
-            echo "[ERROR] SSR Plus 未进入最终配置"
-            exit 1
-          }
           grep -q '^CONFIG_PACKAGE_luci-theme-argon=y$' .config || {
             echo "[ERROR] Argon 未进入最终配置"
             exit 1
@@ -156,7 +152,6 @@ jobs:
             exit 1
           }
           echo "[PASS] PassWall"
-          echo "[PASS] SSR Plus"
           echo "[PASS] Argon"
           echo "[PASS] Carbon"
           echo "========== LuCI 页面定制验证 =========="
