@@ -132,8 +132,6 @@ jobs:
         cp -f feeds/smpackage/.github/diy/banner package/base-files/files/etc/banner
         cp -f feeds/smpackage/.github/diy/index_x86.htm package/emortal/autocore/files/generic/index.htm || true
         patch -p1 < feeds/smpackage/.github/diy/patches/001-dnsmasq-lxc-jail.patch
-        cp -f feeds/smpackage/.github/diy/10_system.js \
-          feeds/luci/modules/luci-mod-status/htdocs/luci-static/resources/view/status/include/10_system.js || true
         cd ..
         chmod +x ./ImmortalWrt_25.12-diy.sh
         ./ImmortalWrt_25.12-diy.sh
