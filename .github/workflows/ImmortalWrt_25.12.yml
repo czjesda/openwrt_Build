@@ -205,7 +205,26 @@ jobs:
       run: |
         export GOROOT_BOOTSTRAP=$GOROOT_BOOTSTRAP
         echo -e "$(($(nproc)+1)) thread compile"
-        make -j$(($(nproc)+1)) || make -j1 V=s      
+        # 每5分钟输出一次当前真正运行的编译进程，便于定位长时间停滞
+        (
+          while true; do
+            sleep 300
+            echo "========== BUILD HEARTBEAT $(date) =========="
+            echo "===== CPU TOP ====="
+            ps -eo pid,ppid,etime,%cpu,%mem,cmd --sort=-%cpu | head -25
+            echo "===== BUILD PROCESSES ====="
+            ps -ef --forest | grep -E 'make|gcc|g\+\+|go|rustc|cargo|python|ninja|cmake' | grep -v grep | tail -80 || true
+            echo "============================================="
+          done
+         ) &
+         MONITOR_PID=$!
+         # 保留原来的编译逻辑：多线程失败后用单线程详细日志重试
+         make -j$(($(nproc)+1)) || make -j1 V=s
+         BUILD_RC=$?
+         # 编译结束后停止心跳监控
+         kill "$MONITOR_PID" 2>/dev/null || true
+         wait "$MONITOR_PID" 2>/dev/null || true
+         exit "$BUILD_RC"     
 
     - name: 保存 ImmortalWrt 下载缓存
       if: always() && !cancelled() && steps.restore-download-cache.outputs.cache-hit != 'true'
