@@ -267,18 +267,14 @@ jobs:
         tag_name: ${{ env.date }}_${{matrix.target}}
         body_path: release.txt
 
-    - name: 清理旧的 Actions 运行记录
-      uses: Mattraks/delete-workflow-runs@main
+    - name: 清理 Lean 旧的Actions运行记录
+      uses: Mattraks/delete-workflow-runs@v2
       with:
+        token: ${{ github.token }}
+        repository: ${{ github.repository }}
         retain_days: 5
-        keep_minimum_runs: 0
+        keep_minimum_runs: 3
+        delete_workflow_pattern: Lean
 
-    - name: 清理旧的 Releases
-      uses: dev-drprasad/delete-older-releases@master
-      if: success() && !cancelled()
-      with:
-        keep_latest: 5
-        delete_tags: true
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    
         
