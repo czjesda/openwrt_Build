@@ -69,20 +69,77 @@ else
 fi
 
 
+# Generic x86 网络：
+# eth0 = WAN/WAN6
+# 实际存在的 eth1、eth2、eth3 = LAN
+X86_NETWORK="$OPENWRT_DIR/target/linux/x86/base-files/etc/board.d/02_network"
+
+if [ -f "$X86_NETWORK" ]; then
+    python3 - "$X86_NETWORK" <<'PYNET'
+from pathlib import Path
+import sys
+
+path = Path(sys.argv[1])
+text = path.read_text()
+
+old = '''        ;;
+esac
+board_config_flush
+'''
+
+new = '''        ;;
+*)
+        lan_ports=""
+        for dev in eth1 eth2 eth3; do
+                [ -d "/sys/class/net/$dev" ] && lan_ports="${lan_ports:+$lan_ports }$dev"
+        done
+
+        if [ -n "$lan_ports" ]; then
+                ucidef_set_interfaces_lan_wan "$lan_ports" "eth0"
+        else
+                ucidef_set_interface_lan "eth0"
+        fi
+        ;;
+esac
+board_config_flush
+'''
+
+if new in text:
+    print("[INFO] generic x86 网络规则已经存在")
+elif old not in text:
+    raise SystemExit("[ERROR] 未找到 02_network 默认分支插入位置")
+else:
+    path.write_text(text.replace(old, new, 1))
+    print("[PASS] generic x86 网络已设置：eth0=WAN，eth1-eth3=LAN")
+PYNET
+
+    if ! grep -q 'ucidef_set_interfaces_lan_wan "$lan_ports" "eth0"' "$X86_NETWORK"; then
+        echo "[ERROR] generic x86 网络规则写入失败"
+        exit 1
+    fi
+
+    echo "[PASS] generic x86 网络规则验证成功"
+else
+    echo "[ERROR] 找不到 x86 网络初始化文件：$X86_NETWORK"
+    exit 1
+fi
+
+
 # 自定义固件显示信息
 DEFAULT_SETTINGS="$OPENWRT_DIR/package/emortal/default-settings/files/99-default-settings"
 BANNER_FILE="$OPENWRT_DIR/package/base-files/files/etc/banner"
 if [ -f "$DEFAULT_SETTINGS" ]; then
     sed -i "s/kenzo/xiaowalu/g" "$DEFAULT_SETTINGS"
 
-    # 固件版本：保留 ImmortalWrt 和官方 RELEASE，只追加 by xiaowalu + 日期
-    sed -i '/xiaowalu_date=/a\. /etc/openwrt_release' "$DEFAULT_SETTINGS"
-    sed -i '/sed -i .*DISTRIB_DESCRIPTION=/c\sed -i "s|^DISTRIB_DESCRIPTION=.*|DISTRIB_DESCRIPTION='\''ImmortalWrt $DISTRIB_RELEASE by xiaowalu $xiaowalu_date'\''|" /etc/openwrt_release' "$DEFAULT_SETTINGS"
+    # 固件版本：去掉 -SNAPSHOT，显示 ImmortalWrt 25.12 by xiaowalu + 日期
+    sed -i '/^\. \/etc\/openwrt_release$/d; /^release_clean=/d' "$DEFAULT_SETTINGS"
+    sed -i '/xiaowalu_date=/a\. /etc/openwrt_release\nrelease_clean="${DISTRIB_RELEASE%-SNAPSHOT}"' "$DEFAULT_SETTINGS"
+    sed -i '/sed -i .*DISTRIB_DESCRIPTION=/c\sed -i "s|^DISTRIB_DESCRIPTION=.*|DISTRIB_DESCRIPTION='\''ImmortalWrt $release_clean by xiaowalu $xiaowalu_date'\''|" /etc/openwrt_release' "$DEFAULT_SETTINGS"
 
-    # 保留原始 LuCI 版本，不再把 LuCI 改成 xiaowalu/日期
+    # 保留 LuCI 原始 branch 和 revision
     sed -i "/^# LuCI 版本字串改 xiaowalu 标记/,/^fi$/d" "$DEFAULT_SETTINGS"
 
-    echo "[PASS] 固件版本显示已设置为 ImmortalWrt 25.12-SNAPSHOT by xiaowalu + 日期，并保留 LuCI 原始版本"
+    echo "[PASS] 固件版本显示已设置为 ImmortalWrt 25.12 by xiaowalu + 日期，并保留完整 LuCI 版本"
 else
     echo "[ERROR] 找不到 99-default-settings：$DEFAULT_SETTINGS"
     exit 1
