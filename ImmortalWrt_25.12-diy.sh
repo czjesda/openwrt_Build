@@ -89,7 +89,7 @@ board_config_flush
 
 new = '''        ;;
 *)
-        ucidef_set_interfaces_lan_wan "eth1 eth2 eth3" "eth0"
+        ucidef_set_interfaces_lan_wan "eth1" "eth0"
         ;;
 esac
 board_config_flush
@@ -101,10 +101,10 @@ elif old not in text:
     raise SystemExit("[ERROR] 未找到 02_network 默认分支插入位置")
 else:
     path.write_text(text.replace(old, new, 1))
-    print("[PASS] generic x86 网络已设置：eth0=WAN，eth1-eth3=LAN")
+    print("[PASS] generic x86 网络已设置：eth0=WAN，eth1=LAN")
 PYNET
 
-    if ! grep -q 'ucidef_set_interfaces_lan_wan "eth1 eth2 eth3" "eth0"' "$X86_NETWORK"; then
+    if ! grep -q 'ucidef_set_interfaces_lan_wan "eth1" "eth0"' "$X86_NETWORK"; then
         echo "[ERROR] generic x86 网络规则写入失败"
         exit 1
     fi
@@ -114,6 +114,52 @@ else
     echo "[ERROR] 找不到 x86 网络初始化文件：$X86_NETWORK"
     exit 1
 fi
+# 首次启动时，根据实际存在的网卡自动扩展 LAN bridge
+# 2口：eth0=WAN，eth1=LAN
+# 3口：eth0=WAN，eth1+eth2=LAN
+# 4口：eth0=WAN，eth1+eth2+eth3=LAN
+LAN_EXPAND="$OPENWRT_DIR/package/base-files/files/etc/uci-defaults/99-xiaowalu-expand-lan"
+
+cat > "$LAN_EXPAND" <<'EOF'
+#!/bin/sh
+
+. /lib/functions.sh
+
+add_lan_port() {
+    local config="$1"
+    local name type port current_ports
+
+    config_get name "$config" name
+    config_get type "$config" type
+
+    [ "$name" = "br-lan" ] || return
+    [ "$type" = "bridge" ] || return
+
+    for port in eth2 eth3; do
+        [ -d "/sys/class/net/$port" ] || continue
+
+        current_ports="$(uci -q get network.$config.ports)"
+        echo "$current_ports" | grep -qw "$port" && continue
+
+        uci add_list network.$config.ports="$port"
+    done
+}
+
+config_load network
+config_foreach add_lan_port device
+
+exit 0
+EOF
+
+chmod +x "$LAN_EXPAND"
+
+if [ -x "$LAN_EXPAND" ]; then
+    echo "[PASS] 首次启动 LAN 自动扩展脚本已生成"
+else
+    echo "[ERROR] LAN 自动扩展脚本生成失败"
+    exit 1
+fi
+
 
 
 # 自定义固件显示信息
