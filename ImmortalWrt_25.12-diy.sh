@@ -89,16 +89,7 @@ board_config_flush
 
 new = '''        ;;
 *)
-        lan_ports=""
-        for dev in eth1 eth2 eth3; do
-                [ -d "/sys/class/net/$dev" ] && lan_ports="${lan_ports:+$lan_ports }$dev"
-        done
-
-        if [ -n "$lan_ports" ]; then
-                ucidef_set_interfaces_lan_wan "$lan_ports" "eth0"
-        else
-                ucidef_set_interface_lan "eth0"
-        fi
+        ucidef_set_interfaces_lan_wan "eth1 eth2 eth3" "eth0"
         ;;
 esac
 board_config_flush
@@ -113,7 +104,7 @@ else:
     print("[PASS] generic x86 网络已设置：eth0=WAN，eth1-eth3=LAN")
 PYNET
 
-    if ! grep -q 'ucidef_set_interfaces_lan_wan "$lan_ports" "eth0"' "$X86_NETWORK"; then
+    if ! grep -q 'ucidef_set_interfaces_lan_wan "eth1 eth2 eth3" "eth0"' "$X86_NETWORK"; then
         echo "[ERROR] generic x86 网络规则写入失败"
         exit 1
     fi
@@ -140,6 +131,21 @@ if [ -f "$DEFAULT_SETTINGS" ]; then
     sed -i "/^# LuCI 版本字串改 xiaowalu 标记/,/^fi$/d" "$DEFAULT_SETTINGS"
 
     echo "[PASS] 固件版本显示已设置为 ImmortalWrt 25.12 by xiaowalu + 日期，并保留完整 LuCI 版本"
+    BUILD_DATE="$(TZ=Asia/Shanghai date +'%Y.%m.%d')"
+    OS_RELEASE_ETC="$OPENWRT_DIR/package/base-files/files/etc/os-release"
+    OS_RELEASE_USR="$OPENWRT_DIR/package/base-files/files/usr/lib/os-release"
+
+    for os_file in "$OS_RELEASE_ETC" "$OS_RELEASE_USR"; do
+        if [ ! -f "$os_file" ]; then
+            echo "[ERROR] 找不到 os-release 模板：$os_file"
+            exit 1
+        fi
+
+        sed -i "s|^PRETTY_NAME=.*|PRETTY_NAME=\"ImmortalWrt 25.12 by xiaowalu $BUILD_DATE\"|" "$os_file"
+        sed -i "s|^OPENWRT_RELEASE=.*|OPENWRT_RELEASE=\"ImmortalWrt 25.12 by xiaowalu $BUILD_DATE\"|" "$os_file"
+    done
+
+    echo "[PASS] os-release 已设置为 ImmortalWrt 25.12 by xiaowalu $BUILD_DATE"
 else
     echo "[ERROR] 找不到 99-default-settings：$DEFAULT_SETTINGS"
     exit 1
